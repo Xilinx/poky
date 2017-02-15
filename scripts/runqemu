@@ -969,6 +969,13 @@ class BaseConfig(object):
                 kernel_opts += " -dtb %s" % self.dtb
         else:
             kernel_opts = ""
+        background_cmd = self.get('QB_BACKGROUND_COMMAND')
+
+        if background_cmd:
+            logger.info('Running in the background %s' % background_cmd)
+            if subprocess.call(background_cmd + ' &', shell=True) != 0:
+                raise Exception('Failed to run %s' % cmd)
+
         cmd = "%s %s" % (self.qemu_opt, kernel_opts)
         logger.info('Running %s' % cmd)
         if subprocess.call(cmd, shell=True) != 0:
