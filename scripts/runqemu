@@ -453,7 +453,7 @@ class BaseConfig(object):
     def check_rootfs(self):
         """Check and set rootfs"""
 
-        if self.fstype == 'nfs':
+        if self.fstype == 'nfs' or self.fstype == "none":
             return
 
         if self.rootfs and not os.path.exists(self.rootfs):
@@ -478,9 +478,16 @@ class BaseConfig(object):
         if self.fstype in self.vmtypes:
             return
 
+        # QB_DEFAULT_KERNEL is always a full file path
+        kernel_name = os.path.basename(self.get('QB_DEFAULT_KERNEL'))
+
+        # The user didn't want a kernel to be loaded
+        if kernel_name == "none":
+            return
+
         deploy_dir_image = self.get('DEPLOY_DIR_IMAGE')
         if not self.kernel:
-            kernel_match_name = "%s/%s" % (deploy_dir_image, self.get('QB_DEFAULT_KERNEL'))
+            kernel_match_name = "%s/%s" % (deploy_dir_image, kernel_name)
             kernel_match_link = "%s/%s" % (deploy_dir_image, self.get('KERNEL_IMAGETYPE'))
             kernel_startswith = "%s/%s*" % (deploy_dir_image, self.get('KERNEL_IMAGETYPE'))
             cmds = (kernel_match_name, kernel_match_link, kernel_startswith)
@@ -872,6 +879,9 @@ class BaseConfig(object):
             self.rootfs_options = ''
             k_root = '/dev/nfs nfsroot=%s:%s,%s' % (self.nfs_server, self.nfs_dir, self.unfs_opts)
             self.kernel_cmdline = 'root=%s rw highres=off' % k_root
+
+        if self.fstype == 'none':
+            self.rootfs_options = ''
 
         self.set('ROOTFS_OPTIONS', self.rootfs_options)
 
