@@ -629,8 +629,10 @@ MODULE_TARBALL_DEPLOY ?= "1"
 
 kernel_do_deploy() {
 	for type in ${KERNEL_IMAGETYPES} ; do
-		base_name=${type}-${KERNEL_IMAGE_BASE_NAME}
-		install -m 0644 ${KERNEL_OUTPUT_DIR}/${type} ${DEPLOYDIR}/${base_name}.bin
+		if [ "$type" != "fitImage" ] ; then
+			base_name=${type}-${KERNEL_IMAGE_BASE_NAME}
+			install -m 0644 ${KERNEL_OUTPUT_DIR}/${type} ${DEPLOYDIR}/${base_name}.bin
+		fi
 	done
 	if [ ${MODULE_TARBALL_DEPLOY} = "1" ] && (grep -q -i -e '^CONFIG_MODULES=y$' .config); then
 		mkdir -p ${D}/lib
@@ -639,10 +641,12 @@ kernel_do_deploy() {
 	fi
 
 	for type in ${KERNEL_IMAGETYPES} ; do
-		base_name=${type}-${KERNEL_IMAGE_BASE_NAME}
-		symlink_name=${type}-${KERNEL_IMAGE_SYMLINK_NAME}
-		ln -sf ${base_name}.bin ${DEPLOYDIR}/${symlink_name}.bin
-		ln -sf ${base_name}.bin ${DEPLOYDIR}/${type}
+		if [ "$type" != "fitImage" ] ; then
+			base_name=${type}-${KERNEL_IMAGE_BASE_NAME}
+			symlink_name=${type}-${KERNEL_IMAGE_SYMLINK_NAME}
+			ln -sf ${base_name}.bin ${DEPLOYDIR}/${symlink_name}.bin
+			ln -sf ${base_name}.bin ${DEPLOYDIR}/${type}
+		fi
 	done
 
 	cd ${B}
