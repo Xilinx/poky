@@ -482,6 +482,9 @@ kernel_do_deploy_append() {
 		linux_bin_base_name="fitImage-linux.bin-${PV}-${PR}-${MACHINE}-${DATETIME}"
 		linux_bin_symlink_name=fitImage-linux.bin-${MACHINE}
 		install -m 0644 linux.bin ${DEPLOYDIR}/${linux_bin_base_name}.bin
+		fitimage_base_name="fitImage-${PV}-${PR}-${MACHINE}-${DATETIME}"
+		fitimage_symlink_name=fitImage-${MACHINE}
+		install -m 0644 arch/${ARCH}/boot/fitImage ${DEPLOYDIR}/${fitimage_base_name}.bin
 
 		if [ -n "${INITRAMFS_IMAGE}" ]; then
 			echo "Copying fit-image-${INITRAMFS_IMAGE}.its source file..."
@@ -496,6 +499,7 @@ kernel_do_deploy_append() {
 		cd ${DEPLOYDIR}
 		ln -sf ${its_base_name}.its ${its_symlink_name}.its
 		ln -sf ${linux_bin_base_name}.bin ${linux_bin_symlink_name}.bin
+		ln -sf ${fitimage_base_name}.bin ${fitimage_symlink_name}.bin
 
 		if [ -n "${INITRAMFS_IMAGE}" ]; then
 			ln -sf ${its_initramfs_base_name}.its ${its_initramfs_symlink_name}.its
