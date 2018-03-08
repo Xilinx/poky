@@ -210,6 +210,8 @@ do_bundle_initramfs () {
 		for type in ${KERNEL_IMAGETYPES} ; do
 			if [ "$type" = "fitImage" ] ; then
 				continue
+			elif [ ${ARCH} = "arm64" ] && [ "$type" = "uImage" ] ; then
+				continue
 			elif [ -h ${KERNEL_OUTPUT_DIR}/$type ] ; then
 				linkpath=`readlink -n ${KERNEL_OUTPUT_DIR}/$type`
 				realpath=`readlink -fn ${KERNEL_OUTPUT_DIR}/$type`
