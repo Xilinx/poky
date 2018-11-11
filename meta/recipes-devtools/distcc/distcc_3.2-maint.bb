@@ -27,7 +27,7 @@ UPSTREAM_VERSION_UNKNOWN = "1"
 
 inherit autotools pkgconfig update-rc.d useradd systemd
 
-EXTRA_OECONF += "--disable-Werror PYTHON='' --disable-pump-mode"
+EXTRA_OECONF += "--disable-Werror PYTHON=''"
 
 USERADD_PACKAGES = "${PN}"
 USERADD_PARAM_${PN} = "--system \
