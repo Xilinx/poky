@@ -499,7 +499,7 @@ do_assemble_fitimage_initramfs() {
 	fi
 }
 
-addtask assemble_fitimage_initramfs before do_deploy after do_bundle_initramfs
+addtask assemble_fitimage_initramfs before do_deploy after do_install
 
 
 kernel_do_deploy[vardepsexclude] = "DATETIME"

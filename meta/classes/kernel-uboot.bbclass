@@ -19,12 +19,6 @@ uboot_prep_kimage() {
 		linux_comp="gzip"
 	fi
 
-	if echo ${KERNEL_IMAGETYPES} | grep -wq "vmlinux"  ; then
-		vmlinux_path="vmlinux"
-		linux_suffix=".gz"
-		linux_comp="gzip"
-	fi
-
 	[ -n "${vmlinux_path}" ] && ${OBJCOPY} -O binary -R .note -R .comment -S "${vmlinux_path}" linux.bin
 
 	if [ "${linux_comp}" != "none" ] ; then
