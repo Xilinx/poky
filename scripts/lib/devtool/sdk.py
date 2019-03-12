@@ -204,10 +204,9 @@ def sdk_update(args, config, basepath, workspace):
             shutil.rmtree(os.path.join(basepath, 'downloads', 'uninative'))
             shutil.move(os.path.join(tmpsdk_dir, 'downloads', 'uninative'), os.path.join(basepath, 'downloads'))
 
-        if not sstate_mirrors:
-            with open(os.path.join(conf_dir, 'site.conf'), 'a') as f:
-                f.write('SCONF_VERSION = "%s"\n' % site_conf_version)
-                f.write('SSTATE_MIRRORS_append = " file://.* %s/sstate-cache/PATH \\n "\n' % updateserver)
+        with open(os.path.join(conf_dir, 'site.conf'), 'a') as f:
+            f.write('SCONF_VERSION = "%s"\n' % site_conf_version)
+            f.write('SSTATE_MIRRORS_append = " file://.* %s/sstate-cache/PATH \\n "\n' % updateserver)
     finally:
         shutil.rmtree(tmpsdk_dir)
 
