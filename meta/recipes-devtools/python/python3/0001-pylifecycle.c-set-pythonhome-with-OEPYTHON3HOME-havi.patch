@@ -1,0 +1,33 @@
+From ca678fc611831081a0daeb294aa5695616756ba7 Mon Sep 17 00:00:00 2001
+From: Jaewon Lee <jaewon.lee@xilinx.com>
+Date: Thu, 4 Apr 2019 23:37:09 +0000
+Subject: [PATCH] pylifecycle.c: set pythonhome with OEPYTHON3HOME having
+ preference
+
+There is one variable PYTHONHOME to determine where libraries are coming
+from for both python2 and python3. This becomes an issue if only one has
+libraries in the specified PYTHONHOME path, but they are using the same
+PYTHONHOME. Creating another variable OEPYTHON3HOME to allow for a way
+to set a different path for python3
+
+Signed-off-by: Jaewon Lee <jaewon.lee@xilinx.com>
+---
+ Python/pylifecycle.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/Python/pylifecycle.c b/Python/pylifecycle.c
+index 422454c..55757ee 100644
+--- a/Python/pylifecycle.c
++++ b/Python/pylifecycle.c
+@@ -864,7 +864,10 @@ Py_GetPythonHome(void)
+ {
+     wchar_t *home = default_home;
+     if (home == NULL && !Py_IgnoreEnvironmentFlag) {
+-        char* chome = Py_GETENV("PYTHONHOME");
++        char* chome = Py_GETENV("OEPYTHON3HOME");
++        if (!chome) {
++            chome = Py_GETENV("PYTHONHOME");
++        }
+         if (chome) {
+             size_t size = Py_ARRAY_LENGTH(env_home);
+             size_t r = mbstowcs(env_home, chome, size);
