@@ -409,15 +409,15 @@ python copy_buildsystem () {
 
     if sdk_include_nativesdk:
         oe.copy_buildsystem.prune_lockedsigs([],
-    	                                     excluded_targets.split(),
-    	                                     nativesigfile,
+                                             excluded_targets.split(),
+                                             nativesigfile,
                                              True,
                                              nativesigfile_pruned)
 
         oe.copy_buildsystem.merge_lockedsigs([],
-    	                                     sigfile,
-    	                                     nativesigfile_pruned,
-    	                                     sigfile)
+                                             sigfile,
+                                             nativesigfile_pruned,
+                                             sigfile)
 
     oe.copy_buildsystem.prune_lockedsigs([],
                                          excluded_targets.split(),
