@@ -253,6 +253,9 @@ do_bundle_initramfs () {
 				tmp_path=$tmp_path" "$imageType"##"
 			fi
 		done
+		if [ -f ${KERNEL_OUTPUT_DIR}/compressed/vmlinux ]; then
+			mv -f ${KERNEL_OUTPUT_DIR}/compressed/vmlinux  ${KERNEL_OUTPUT_DIR}/compressed/vmlinux.bak
+		fi
 		use_alternate_initrd=CONFIG_INITRAMFS_SOURCE=${B}/usr/${INITRAMFS_IMAGE_NAME}.cpio
 		kernel_do_compile
 		# Restoring kernel image
@@ -269,6 +272,10 @@ do_bundle_initramfs () {
 				mv -f ${KERNEL_OUTPUT_DIR}/$imageType.bak ${KERNEL_OUTPUT_DIR}/$imageType
 			fi
 		done
+		if [ -f ${KERNEL_OUTPUT_DIR}/compressed/vmlinux.bak ]; then
+			mv -f ${KERNEL_OUTPUT_DIR}/compressed/vmlinux ${KERNEL_OUTPUT_DIR}/compressed/vmlinux.initramfs
+			mv -f ${KERNEL_OUTPUT_DIR}/compressed/vmlinux.bak ${KERNEL_OUTPUT_DIR}/compressed/vmlinux
+		fi
 	fi
 }
 do_bundle_initramfs[dirs] = "${B}"
