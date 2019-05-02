@@ -73,6 +73,8 @@ SRC_URI = "\
            ${BACKPORTS} \
 "
 BACKPORTS = "\
+           file://0001-Backport_PR_target_85644.patch \
+           file://0001-Backport_PR_target_89726.patch \
 "
 SRC_URI[md5sum] = "4ab282f414676496483b3e1793d07862"
 SRC_URI[sha256sum] = "196c3c04ba2613f893283977e6011b2345d1cd1af9abeac58e916b1aab3e0080"

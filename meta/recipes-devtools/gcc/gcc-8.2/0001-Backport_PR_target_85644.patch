@@ -1,0 +1,108 @@
+From e494d7d1bbfd335b4f2776fc656cb105c6356686 Mon Sep 17 00:00:00 2001
+From: jakub <jakub@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date: Tue, 8 Jan 2019 09:56:36 +0000
+Subject: [PATCH] 	Backported from mainline 	2018-11-22  Jakub
+ Jelinek  <jakub@redhat.com>
+
+	PR target/85644
+	PR target/86832
+	* config/i386/i386.c (ix86_option_override_internal): Default
+	ix86_stack_protector_guard to SSP_TLS only if TARGET_THREAD_SSP_OFFSET
+	is defined.
+	* config/i386/i386.md (stack_protect_set, stack_protect_set_<mode>,
+	stack_protect_test, stack_protect_test_<mode>): Use empty condition
+	instead of TARGET_SSP_TLS_GUARD.
+
+
+git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/branches/gcc-8-branch@267686 138bc75d-0d04-0410-961f-82ee72b054a4
+
+Upstream-Status: Backport
+---
+ gcc/ChangeLog           | 11 +++++++++++
+ gcc/config/i386/i386.c  | 10 ++++++++--
+ gcc/config/i386/i386.md |  8 ++++----
+ 3 files changed, 23 insertions(+), 6 deletions(-)
+
+Index: gcc-8.2.0/gcc/ChangeLog
+===================================================================
+--- gcc-8.2.0.orig/gcc/ChangeLog
++++ gcc-8.2.0/gcc/ChangeLog
+@@ -1,3 +1,17 @@
++2019-01-08  Jakub Jelinek  <jakub@redhat.com>
++
++	Backported from mainline
++	2018-11-22  Jakub Jelinek  <jakub@redhat.com>
++
++	PR target/85644
++	PR target/86832
++	* config/i386/i386.c (ix86_option_override_internal): Default
++	ix86_stack_protector_guard to SSP_TLS only if TARGET_THREAD_SSP_OFFSET
++	is defined.
++	* config/i386/i386.md (stack_protect_set, stack_protect_set_<mode>,
++	stack_protect_test, stack_protect_test_<mode>): Use empty condition
++	instead of TARGET_SSP_TLS_GUARD.
++
+ 2018-07-26  Release Manager
+ 
+ 	* GCC 8.2.0 released.
+Index: gcc-8.2.0/gcc/config/i386/i386.c
+===================================================================
+--- gcc-8.2.0.orig/gcc/config/i386/i386.c
++++ gcc-8.2.0/gcc/config/i386/i386.c
+@@ -4848,8 +4848,14 @@ ix86_option_override_internal (bool main
+ 
+   /* Handle stack protector */
+   if (!opts_set->x_ix86_stack_protector_guard)
+-    opts->x_ix86_stack_protector_guard
+-      = TARGET_HAS_BIONIC ? SSP_GLOBAL : SSP_TLS;
++    {
++#ifdef TARGET_THREAD_SSP_OFFSET
++      if (!TARGET_HAS_BIONIC)
++	opts->x_ix86_stack_protector_guard = SSP_TLS;
++      else
++#endif
++	opts->x_ix86_stack_protector_guard = SSP_GLOBAL;
++    }
+ 
+ #ifdef TARGET_THREAD_SSP_OFFSET
+   ix86_stack_protector_guard_offset = TARGET_THREAD_SSP_OFFSET;
+Index: gcc-8.2.0/gcc/config/i386/i386.md
+===================================================================
+--- gcc-8.2.0.orig/gcc/config/i386/i386.md
++++ gcc-8.2.0/gcc/config/i386/i386.md
+@@ -19771,7 +19771,7 @@
+ (define_expand "stack_protect_set"
+   [(match_operand 0 "memory_operand")
+    (match_operand 1 "memory_operand")]
+-  "TARGET_SSP_TLS_GUARD"
++  ""
+ {
+   rtx (*insn)(rtx, rtx);
+ 
+@@ -19789,7 +19789,7 @@
+ 		    UNSPEC_SP_SET))
+    (set (match_scratch:PTR 2 "=&r") (const_int 0))
+    (clobber (reg:CC FLAGS_REG))]
+-  "TARGET_SSP_TLS_GUARD"
++  ""
+   "mov{<imodesuffix>}\t{%1, %2|%2, %1}\;mov{<imodesuffix>}\t{%2, %0|%0, %2}\;xor{l}\t%k2, %k2"
+   [(set_attr "type" "multi")])
+ 
+@@ -19797,7 +19797,7 @@
+   [(match_operand 0 "memory_operand")
+    (match_operand 1 "memory_operand")
+    (match_operand 2)]
+-  "TARGET_SSP_TLS_GUARD"
++  ""
+ {
+   rtx flags = gen_rtx_REG (CCZmode, FLAGS_REG);
+ 
+@@ -19820,7 +19820,7 @@
+ 		     (match_operand:PTR 2 "memory_operand" "m")]
+ 		    UNSPEC_SP_TEST))
+    (clobber (match_scratch:PTR 3 "=&r"))]
+-  "TARGET_SSP_TLS_GUARD"
++  ""
+   "mov{<imodesuffix>}\t{%1, %3|%3, %1}\;xor{<imodesuffix>}\t{%2, %3|%3, %2}"
+   [(set_attr "type" "multi")])
+ 
