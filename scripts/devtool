@@ -257,6 +257,8 @@ def main():
             if not basepath:
                 logger.error("This script can only be run after initialising the build environment (e.g. by using oe-init-build-env)")
                 sys.exit(1)
+            else:
+                context.fixed_setup = True
 
     logger.debug('Using basepath %s' % basepath)
 
