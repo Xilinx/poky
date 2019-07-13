@@ -601,6 +601,11 @@ def _extract_source(srctree, keep_temp, devbranch, sync, config, basepath, works
               workshareddir = d.getVar('STAGING_KERNEL_DIR')
               staging_kerVer = get_staging_kver(workshareddir) 
               kernelVersion = d.getVar('LINUX_VERSION')
+
+              #handle dangling symbolic link in work-shared:
+              if(os.path.islink(workshareddir)):
+                     os.unlink(workshareddir)
+
               if (os.path.exists(workshareddir) and (not os.listdir(workshareddir) or kernelVersion!=staging_kerVer)): 
                    shutil.rmtree(workshareddir)
                    oe.path.copyhardlinktree(srcsubdir,workshareddir)

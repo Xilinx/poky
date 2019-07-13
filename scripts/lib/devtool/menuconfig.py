@@ -49,7 +49,7 @@ def menuconfig(args, config, basepath, workspace):
       if not rd.getVarFlag('do_menuconfig','task'):
          raise DevtoolError("This package does not support menuconfig option")
 
-      workspace_dir = os.path.join(basepath,'workspace/sources')
+      workspace_dir = os.path.join(config.workspace_path,'sources')
       kconfigpath = rd.getVar('B')
       pn_src = os.path.join(workspace_dir,pn)
 
