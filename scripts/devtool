@@ -238,6 +238,10 @@ def main():
     elif global_args.quiet:
         logger.setLevel(logging.ERROR)
 
+    plnxenv = os.environ.get('PETALINUX')
+    if plnxenv:
+       context.fixed_setup = True
+
     if global_args.basepath:
         # Override
         basepath = global_args.basepath
@@ -257,8 +261,6 @@ def main():
             if not basepath:
                 logger.error("This script can only be run after initialising the build environment (e.g. by using oe-init-build-env)")
                 sys.exit(1)
-            else:
-                context.fixed_setup = True
 
     logger.debug('Using basepath %s' % basepath)
 
