@@ -33,9 +33,7 @@ def menuconfig(args, config, basepath, workspace):
 
     rd = "" 
     kconfigpath = ""
-    pn_src = ""
     localfilesdir = ""
-    workspace_dir = ""
     tinfoil = setup_tinfoil(basepath=basepath)
     try:
       rd = parse_recipe(config, tinfoil, args.component, appends=True, filter_workspace=False)
@@ -49,12 +47,11 @@ def menuconfig(args, config, basepath, workspace):
       if not rd.getVarFlag('do_menuconfig','task'):
          raise DevtoolError("This package does not support menuconfig option")
 
-      workspace_dir = os.path.join(config.workspace_path,'sources')
+      srctree=rd.getVar('S',True)
       kconfigpath = rd.getVar('B')
-      pn_src = os.path.join(workspace_dir,pn)
 
       #add check to see if oe_local_files exists or not
-      localfilesdir = os.path.join(pn_src,'oe-local-files') 
+      localfilesdir = os.path.join(srctree,'oe-local-files') 
       if not os.path.exists(localfilesdir):
           bb.utils.mkdirhier(localfilesdir)
           #Add gitignore to ensure source tree is clean
@@ -69,7 +66,7 @@ def menuconfig(args, config, basepath, workspace):
     logger.info('Launching menuconfig')
     exec_build_env_command(config.init_path, basepath, 'bitbake -c menuconfig %s' % pn, watch=True) 
     fragment = os.path.join(localfilesdir, 'devtool-fragment.cfg')
-    res = standard._create_kconfig_diff(pn_src,rd,fragment)
+    res = standard._create_kconfig_diff(srctree,rd,fragment)
 
     return 0
 
