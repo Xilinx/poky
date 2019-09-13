@@ -31,9 +31,11 @@ logger = logging.getLogger('devtool')
 def menuconfig(args, config, basepath, workspace):
     """Entry point for the devtool 'menuconfig' subcommand"""
 
-    rd = "" 
+    rd = ""
     kconfigpath = ""
     localfilesdir = ""
+    fragname = "devtool-fragment.cfg"
+
     tinfoil = setup_tinfoil(basepath=basepath)
     try:
       rd = parse_recipe(config, tinfoil, args.component, appends=True, filter_workspace=False)
@@ -48,10 +50,9 @@ def menuconfig(args, config, basepath, workspace):
          raise DevtoolError("This package does not support menuconfig option")
 
       srctree=rd.getVar('S',True)
-      kconfigpath = rd.getVar('B')
 
       #add check to see if oe_local_files exists or not
-      localfilesdir = os.path.join(srctree,'oe-local-files') 
+      localfilesdir = os.path.join(srctree,'oe-local-files')
       if not os.path.exists(localfilesdir):
           bb.utils.mkdirhier(localfilesdir)
           #Add gitignore to ensure source tree is clean
@@ -60,12 +61,23 @@ def menuconfig(args, config, basepath, workspace):
                   f.write('# Ignore local files, by default. Remove this file if you want to commit the directory to Git\n')
                   f.write('*\n')
 
+      if args.allow_append:
+	      with open(os.path.join(srctree,'.run-devtool-menuconfig'),'w') as f:
+		      f.write('RUN-DEVTOOL-MENUCONFIG=1')
+
     finally:
       tinfoil.shutdown()
 
+    if args.allow_append:
+	    if not os.path.exists(os.path.join(localfilesdir,'devtool-fragment.cfg')):
+		    fragname = "devtool-fragment.cfg"
+	    else:
+		    fragname = "devtool-fragment_tmp001.cfg"
+
     logger.info('Launching menuconfig')
-    exec_build_env_command(config.init_path, basepath, 'bitbake -c menuconfig %s' % pn, watch=True) 
-    fragment = os.path.join(localfilesdir, 'devtool-fragment.cfg')
+    exec_build_env_command(config.init_path, basepath, 'bitbake -c menuconfig %s' % pn, watch=True)
+
+    fragment = os.path.join(localfilesdir, fragname)
     res = standard._create_kconfig_diff(srctree,rd,fragment)
 
     return 0
@@ -74,4 +86,5 @@ def register_commands(subparsers, context):
     """register devtool subcommands from this plugin"""
     parser_menuconfig = subparsers.add_parser('menuconfig',help='Alter build-time configuration for a recipe', description='Launches the make menuconfig command(for recipes where do_menuconfig is available), allowing users to make changes to the build-time configuration. Creates a config fragment corresponding to changes made.', group='advanced') 
     parser_menuconfig.add_argument('component', help='compenent to alter config')
+    parser_menuconfig.add_argument('-a','--allow-append',action="store_true",help='append devtool-fragment.cfg to previous iteration fragment')
     parser_menuconfig.set_defaults(func=menuconfig,fixed_setup=context.fixed_setup)
