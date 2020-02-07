@@ -46,7 +46,7 @@ require conf/machine/include/microblaze/feature-microblaze-versions.inc
 require conf/machine/include/microblaze/feature-microblaze-math.inc
 
 # Architecture name, either 'microblazeeb' or 'microblazeel' depending on endianess
-TUNE_ARCH = "microblaze${@bb.utils.contains("TUNE_FEATURES", "bigendian", "", "el", d)}"
+TUNE_ARCH = "microblaze${@bb.utils.contains("TUNE_FEATURES", "bigendian", "eb", "el", d)}"
 
 # Package Architecture formatting
 TUNE_PKGARCH = "microblaze${MBPKGARCH_ENDIAN}${MBPKGARCH_VERSION}${MBPKGARCH_TUNE}${MBPKGARCH_MATH}"
