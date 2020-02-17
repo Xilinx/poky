@@ -1382,6 +1382,25 @@ def _export_local_files(srctree, rd, destdir, srctreebase):
     removed = OrderedDict()
     local_files_dir = os.path.join(srctreebase, 'oe-local-files')
     git_files = _git_ls_tree(srctree)
+
+    tmpfragname=os.path.join(local_files_dir,'devtool-fragment_tmp001.cfg')
+
+    run_do_menuconfig = 0
+    checkmenuconfig = os.path.join(srctreebase,'.run-devtool-menuconfig')
+    if os.path.exists(checkmenuconfig):
+           with open(checkmenuconfig,'r') as f:
+                   if 'RUN-DEVTOOL-MENUCONFIG=1' in f.read():
+                           run_do_menuconfig = 1
+           os.remove(checkmenuconfig)
+
+    if os.path.exists(tmpfragname):
+           with open(tmpfragname,"r") as fin:
+                   tempfragcontents=fin.read()
+           with open(os.path.join(local_files_dir,'devtool-fragment.cfg'),"+a") as fout:
+                   fout.write(tempfragcontents)
+           os.remove(tmpfragname)
+
+
     if 'oe-local-files' in git_files:
         # If tracked by Git, take the files from srctree HEAD. First get
         # the tree object of the directory
