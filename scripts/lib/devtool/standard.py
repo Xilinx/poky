@@ -939,10 +939,20 @@ def modify(args, config, basepath, workspace):
                         '    ln -sfT ${B}/.config ${S}/.config.new\n'
                         '}\n')
             if rd.getVarFlag('do_menuconfig','task'):
-                f.write('\ndo_configure_append() {\n'
-                '    cp ${B}/.config ${S}/.config.baseline\n'
-                '    ln -sfT ${B}/.config ${S}/.config.new\n'
-                '}\n')
+                if 'xen' in pn:
+                        f.write('\ndo_configure_append() {\n\n'
+			'    if [ -e ${B}/.config ]; then\n'
+			'    	cp ${B}/.config ${S}/.config.baseline\n'
+			'    	ln -sfT ${B}/.config ${S}/.config.new\n'
+			'    else\n'
+			'       echo "WARNING: .config file not found under ${B}"\n' 
+			'    fi\n'
+			'}\n')
+                else:
+                        f.write('\ndo_configure_append() {\n'
+			'    cp ${B}/.config ${S}/.config.baseline\n'
+			'    ln -sfT ${B}/.config ${S}/.config.new\n'
+			'}\n')
             if initial_rev:
                 f.write('\n# initial_rev: %s\n' % initial_rev)
                 for commit in commits:
