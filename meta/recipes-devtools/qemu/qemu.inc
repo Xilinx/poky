@@ -75,6 +75,7 @@ EXTRA_OECONF = " \
     --disable-strip \
     --disable-werror \
     --extra-cflags='${CFLAGS}' \
+    --extra-ldflags='${LDFLAGS}' \
     ${PACKAGECONFIG_CONFARGS} \
     "
 
