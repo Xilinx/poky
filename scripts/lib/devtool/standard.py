@@ -1429,7 +1429,7 @@ def _export_local_files(srctree, rd, destdir, srctreebase):
         new_set = []
 
     # Special handling for kernel config
-    if bb.data.inherits_class('kernel-yocto', rd):
+    if not run_do_menuconfig and bb.data.inherits_class('kernel-yocto', rd):
         fragment_fn = 'devtool-fragment.cfg'
         fragment_path = os.path.join(destdir, fragment_fn)
         if _create_kconfig_diff(srctree, rd, fragment_path):
