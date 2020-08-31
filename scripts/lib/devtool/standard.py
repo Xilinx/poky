@@ -1797,6 +1797,10 @@ def _update_recipe(recipename, workspace, rd, mode, appendlayerdir, wildcard_ver
     anyupdated = False
     appendfile = None
     allremoved = []
+
+    if not override_branches and startbranch.startswith('(HEAD detached at '):
+        logger.warning("source tree is in detached state, devtool might not work as expected")
+        checkedout = startbranch
     if override_branches:
         logger.info('Handling main branch (%s)...' % mainbranch)
         if startbranch != mainbranch:
