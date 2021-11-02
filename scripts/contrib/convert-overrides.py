@@ -29,7 +29,7 @@ if len(sys.argv) < 2:
 
 # List of strings to treat as overrides
 vars = ["append", "prepend", "remove"]
-vars = vars + ["qemuarm", "qemux86", "qemumips", "qemuppc", "qemuriscv", "qemuall"]
+vars = vars + ["qemuarm", "qemux86", "qemumips", "qemuppc", "qemuriscv", "qemuall", "versal" ,"zynqmp", "zynq", "ultra96", "kv260", "vck5000", "vmk180", "vck-sc", "vpk-sc", "zc1751", "vck190", "k26", "kc705", "zcu102", "zcu106", "zc702", "zc706", "zedboard", "zc1254", "zcu104", "zcu111", "zcu1275", "zcu1285", "zcu216", "zcu208", "v350", "vc-p-a2197-00", "kcu105", "vcu118", "sp701", "zcu670", "vpk120", "ac701"]
 vars = vars + ["genericx86", "edgerouter", "beaglebone-yocto"]
 vars = vars + ["armeb", "arm", "armv5", "armv6", "armv4", "powerpc64", "aarch64", "riscv32", "riscv64", "x86", "mips64", "powerpc"]
 vars = vars + ["mipsarch", "x86-x32", "mips16e", "microblaze", "e5500-64b", "mipsisa32", "mipsisa64"]
