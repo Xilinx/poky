@@ -4,6 +4,7 @@ IMAGE_PKGTYPE ?= "ipk"
 
 IPKGCONF_TARGET = "${WORKDIR}/opkg.conf"
 IPKGCONF_SDK =  "${WORKDIR}/opkg-sdk.conf"
+IPKGCONF_SDK_TARGET = "${WORKDIR}/opkg-sdk-target.conf"
 
 PKGWRITEDIRIPK = "${WORKDIR}/deploy-ipks"
 
@@ -64,7 +65,7 @@ def ipk_write_pkg(pkg, d):
     try:
         localdata.setVar('ROOT', '')
         localdata.setVar('ROOT_%s' % pkg, root)
-        pkgname = localdata.getVar('PKG_%s' % pkg)
+        pkgname = localdata.getVar('PKG:%s' % pkg)
         if not pkgname:
             pkgname = pkg
         localdata.setVar('PKG', pkgname)
@@ -229,8 +230,8 @@ def ipk_write_pkg(pkg, d):
                                 shell=True)
 
         if d.getVar('IPK_SIGN_PACKAGES') == '1':
-            ipkver = "%s-%s" % (d.getVar('PKGV'), d.getVar('PKGR'))
-            ipk_to_sign = "%s/%s_%s_%s.ipk" % (pkgoutdir, pkgname, ipkver, d.getVar('PACKAGE_ARCH'))
+            ipkver = "%s-%s" % (localdata.getVar('PKGV'), localdata.getVar('PKGR'))
+            ipk_to_sign = "%s/%s_%s_%s.ipk" % (pkgoutdir, pkgname, ipkver, localdata.getVar('PACKAGE_ARCH'))
             sign_ipk(d, ipk_to_sign)
 
     finally:
@@ -272,11 +273,9 @@ python do_package_write_ipk () {
 }
 do_package_write_ipk[dirs] = "${PKGWRITEDIRIPK}"
 do_package_write_ipk[cleandirs] = "${PKGWRITEDIRIPK}"
-do_package_write_ipk[umask] = "022"
 do_package_write_ipk[depends] += "${@oe.utils.build_depends_string(d.getVar('PACKAGE_WRITE_DEPS'), 'do_populate_sysroot')}"
-addtask package_write_ipk after do_packagedata do_package
+EPOCHTASK ??= ""
+addtask package_write_ipk after do_packagedata do_package ${EPOCHTASK} before do_build
 
 PACKAGEINDEXDEPS += "opkg-utils-native:do_populate_sysroot"
 PACKAGEINDEXDEPS += "opkg-native:do_populate_sysroot"
-
-do_build[recrdeptask] += "do_package_write_ipk"

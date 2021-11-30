@@ -1,9 +1,10 @@
 SUMMARY = "Baremetal examples to work with the several QEMU architectures supported on OpenEmbedded"
 HOMEPAGE = "https://github.com/aehs29/baremetal-helloqemu"
+DESCRIPTION = "These are introductory examples to showcase the use of QEMU to run baremetal applications."
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=39346640a23c701e4f459e05f56f4449"
 
-SRCREV = "99f4fa4a3b266b42b52af302610b0f4f429ba5e3"
+SRCREV = "31b4e5a337018b4a00a7426b0e5ed83b81df30c7"
 PV = "0.1+git${SRCPV}"
 
 SRC_URI = "git://github.com/aehs29/baremetal-helloqemu.git;protocol=https;branch=master"
@@ -27,14 +28,16 @@ inherit baremetal-image
 # machine that QEMU uses on OE, e.g. -machine virt -cpu cortex-a57
 # but the examples can also be run on other architectures/machines
 # such as vexpress-a15 by overriding the setting on the machine.conf
-COMPATIBLE_MACHINE = "qemuarmv5|qemuarm|qemuarm64"
+COMPATIBLE_MACHINE = "qemuarmv5|qemuarm|qemuarm64|qemuriscv64|qemuriscv32"
 
 BAREMETAL_QEMUARCH ?= ""
-BAREMETAL_QEMUARCH_qemuarmv5 = "versatile"
-BAREMETAL_QEMUARCH_qemuarm = "arm"
-BAREMETAL_QEMUARCH_qemuarm64 = "aarch64"
+BAREMETAL_QEMUARCH:qemuarmv5 = "versatile"
+BAREMETAL_QEMUARCH:qemuarm = "arm"
+BAREMETAL_QEMUARCH:qemuarm64 = "aarch64"
+BAREMETAL_QEMUARCH:qemuriscv64 = "riscv64"
+BAREMETAL_QEMUARCH:qemuriscv32 = "riscv32"
 
-EXTRA_OEMAKE_append = " QEMUARCH=${BAREMETAL_QEMUARCH} V=1"
+EXTRA_OEMAKE:append = " QEMUARCH=${BAREMETAL_QEMUARCH} V=1"
 
 
 # Install binaries on the proper location for baremetal-image to fetch and deploy
@@ -44,7 +47,7 @@ do_install(){
     install -m 755 ${B}/build/hello_baremetal_${BAREMETAL_QEMUARCH}.elf ${D}/${base_libdir}/firmware/${BAREMETAL_BINNAME}.elf
 }
 
-FILES_${PN} += " \
+FILES:${PN} += " \
     ${base_libdir}/firmware/${BAREMETAL_BINNAME}.bin \
     ${base_libdir}/firmware/${BAREMETAL_BINNAME}.elf \
 "

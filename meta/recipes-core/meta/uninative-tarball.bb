@@ -8,6 +8,7 @@ TOOLCHAIN_TARGET_TASK = ""
 # utf-16, cp1252 - binutils-windres
 TOOLCHAIN_HOST_TASK = "\
     nativesdk-glibc \
+    nativesdk-glibc-dbg \
     nativesdk-glibc-gconv-ibm850 \
     nativesdk-glibc-gconv-iso8859-1 \
     nativesdk-glibc-gconv-utf-16 \
@@ -35,7 +36,6 @@ RDEPENDS = "${TOOLCHAIN_HOST_TASK}"
 
 EXCLUDE_FROM_WORLD = "1"
 
-inherit meta
 inherit populate_sdk
 inherit nopackages
 

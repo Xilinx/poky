@@ -2,10 +2,14 @@ require vim.inc
 
 PROVIDES = "xxd"
 
-PACKAGECONFIG_class-native = ""
-BBCLASSEXTEND = "native"
+RDEPENDS:${PN} = "ncurses-terminfo-base"
+# Recommend that runtime data is installed along with vim
+RRECOMMENDS:${PN} = "${PN}-syntax ${PN}-help ${PN}-tutor ${PN}-vimrc ${PN}-common"
 
-ALTERNATIVE_${PN}_append = " xxd"
+PACKAGECONFIG:class-native = ""
+BBCLASSEXTEND = "native nativesdk"
+
+ALTERNATIVE:${PN}:append = " xxd"
 ALTERNATIVE_TARGET[xxd] = "${bindir}/xxd"
 ALTERNATIVE_LINK_NAME[xxd] = "${bindir}/xxd"
 

@@ -1,6 +1,7 @@
-SECTION = "console/utils"
 SUMMARY = "Command line utilities for working with *.desktop files"
+DESCRIPTION = "desktop-file-utils contains a few command line utilities for working with desktop entries"
 HOMEPAGE = "http://www.freedesktop.org/wiki/Software/desktop-file-utils"
+SECTION = "console/utils"
 LICENSE = "GPLv2+"
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263 \
@@ -18,7 +19,7 @@ EXTRA_OECONF += "ac_cv_prog_EMACS=no"
 
 BBCLASSEXTEND = "native nativesdk"
 
-do_install_append() {
+do_install:append() {
         rm -rf ${D}${datadir}/emacs
 }
 

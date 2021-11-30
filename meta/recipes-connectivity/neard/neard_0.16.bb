@@ -22,12 +22,12 @@ inherit autotools pkgconfig systemd update-rc.d
 
 PACKAGECONFIG ??= "${@bb.utils.filter('DISTRO_FEATURES', 'systemd', d)}"
 
-PACKAGECONFIG[systemd] = "--enable-systemd --with-systemdsystemunitdir=${systemd_unitdir}/system/ --with-systemduserunitdir=${systemd_unitdir}/user/,--disable-systemd"
+PACKAGECONFIG[systemd] = "--enable-systemd --with-systemdsystemunitdir=${systemd_system_unitdir}/ --with-systemduserunitdir=${systemd_unitdir}/user/,--disable-systemd"
 
 EXTRA_OECONF += "--enable-tools"
 
 # This would copy neard start-stop shell and test scripts
-do_install_append() {
+do_install:append() {
 	if ${@bb.utils.contains('DISTRO_FEATURES', 'sysvinit', 'true', 'false', d)}; then
 		install -d ${D}${sysconfdir}/init.d/
 		sed "s:@installpath@:${libexecdir}/nfc:" ${WORKDIR}/neard.in \
@@ -36,10 +36,10 @@ do_install_append() {
 	fi
 }
 
-RDEPENDS_${PN} = "dbus"
+RDEPENDS:${PN} = "dbus"
 
 # Bluez & Wifi are not mandatory except for handover
-RRECOMMENDS_${PN} = "\
+RRECOMMENDS:${PN} = "\
                      ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'bluez5', '', d)} \
                      ${@bb.utils.contains('DISTRO_FEATURES', 'wifi','wpa-supplicant', '', d)} \
                     "
@@ -47,4 +47,4 @@ RRECOMMENDS_${PN} = "\
 INITSCRIPT_NAME = "neard"
 INITSCRIPT_PARAMS = "defaults 64"
 
-SYSTEMD_SERVICE_${PN} = "neard.service"
+SYSTEMD_SERVICE:${PN} = "neard.service"

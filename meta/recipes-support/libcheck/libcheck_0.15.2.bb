@@ -1,4 +1,9 @@
 SUMMARY  = "Check - unit testing framework for C code"
+DESCRIPTION = "It features a simple interface for defining unit tests, \
+putting little in the way of the developer. Tests are run in a separate \
+address space, so both assertion failures and code errors that cause \
+segmentation faults or other signals can be caught. Test results are \
+reportable in the following: Subunit, TAP, XML, and a generic logging format."
 HOMEPAGE = "https://libcheck.github.io/check/"
 SECTION = "devel"
 
@@ -16,13 +21,13 @@ inherit autotools pkgconfig texinfo
 
 CACHED_CONFIGUREVARS += "ac_cv_path_AWK_PATH=${bindir}/gawk"
 
-RREPLACES_${PN} = "check (<= 0.9.5)"
+RREPLACES:${PN} = "check (<= 0.9.5)"
 
 BBCLASSEXTEND = "native nativesdk"
 
 PACKAGES =+ "checkmk"
 
-FILES_checkmk = "${bindir}/checkmk"
+FILES:checkmk = "${bindir}/checkmk"
 
-RDEPENDS_checkmk = "gawk"
+RDEPENDS:checkmk = "gawk"
 

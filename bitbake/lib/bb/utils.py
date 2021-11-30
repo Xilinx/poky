@@ -129,6 +129,7 @@ def vercmp(ta, tb):
     return r
 
 def vercmp_string(a, b):
+    """ Split version strings and compare them """
     ta = split_version(a)
     tb = split_version(b)
     return vercmp(ta, tb)
@@ -247,6 +248,12 @@ def explode_dep_versions2(s, *, sort=True):
     return r
 
 def explode_dep_versions(s):
+    """
+    Take an RDEPENDS style string of format:
+    "DEPEND1 (optional version) DEPEND2 (optional version) ..."
+    skip null value and items appeared in dependancy string multiple times
+    and return a dictionary of dependencies and versions.
+    """
     r = explode_dep_versions2(s)
     for d in r:
         if not r[d]:
@@ -480,7 +487,7 @@ def lockfile(name, shared=False, retry=True, block=False):
                     return lf
             lf.close()
         except OSError as e:
-            if e.errno == errno.EACCES:
+            if e.errno == errno.EACCES or e.errno == errno.ENAMETOOLONG:
                 logger.error("Unable to acquire lock '%s', %s",
                              e.strerror, name)
                 sys.exit(1)
@@ -602,7 +609,7 @@ def filter_environment(good_vars):
     os.environ["LC_ALL"] = "en_US.UTF-8"
 
     if removed_vars:
-        logger.debug(1, "Removed the following variables from the environment: %s", ", ".join(removed_vars.keys()))
+        logger.debug("Removed the following variables from the environment: %s", ", ".join(removed_vars.keys()))
 
     return removed_vars
 
@@ -692,7 +699,7 @@ def remove(path, recurse=False, ionice=False):
                 raise
 
 def prunedir(topdir, ionice=False):
-    # Delete everything reachable from the directory named in 'topdir'.
+    """ Delete everything reachable from the directory named in 'topdir'. """
     # CAUTION:  This is dangerous!
     if _check_unsafe_delete_path(topdir):
         raise Exception('bb.utils.prunedir: called with dangerous path "%s", refusing to delete!' % topdir)
@@ -703,8 +710,10 @@ def prunedir(topdir, ionice=False):
 # but thats possibly insane and suffixes is probably going to be small
 #
 def prune_suffix(var, suffixes, d):
-    # See if var ends with any of the suffixes listed and
-    # remove it if found
+    """ 
+    See if var ends with any of the suffixes listed and
+    remove it if found 
+    """
     for suffix in suffixes:
         if suffix and var.endswith(suffix):
             return var[:-len(suffix)]
@@ -773,7 +782,7 @@ def movefile(src, dest, newmtime = None, sstat = None):
 
     if sstat[stat.ST_DEV] == dstat[stat.ST_DEV]:
         try:
-            os.rename(src, destpath)
+            bb.utils.rename(src, destpath)
             renamefailed = 0
         except Exception as e:
             if e.errno != errno.EXDEV:
@@ -787,7 +796,7 @@ def movefile(src, dest, newmtime = None, sstat = None):
         if stat.S_ISREG(sstat[stat.ST_MODE]):
             try: # For safety copy then move it over.
                 shutil.copyfile(src, destpath + "#new")
-                os.rename(destpath + "#new", destpath)
+                bb.utils.rename(destpath + "#new", destpath)
                 didcopy = 1
             except Exception as e:
                 print('movefile: copy', src, '->', dest, 'failed.', e)
@@ -865,7 +874,7 @@ def copyfile(src, dest, newmtime = None, sstat = None):
 
             # For safety copy then move it over.
             shutil.copyfile(src, dest + "#new")
-            os.rename(dest + "#new", dest)
+            bb.utils.rename(dest + "#new", dest)
         except Exception as e:
             logger.warning("copyfile: copy %s to %s failed (%s)" % (src, dest, e))
             return False
@@ -956,6 +965,10 @@ def umask(new_mask):
         os.umask(current_mask)
 
 def to_boolean(string, default=None):
+    """ 
+    Check input string and return boolean value True/False/None
+    depending upon the checks 
+    """
     if not string:
         return default
 
@@ -999,6 +1012,23 @@ def contains(variable, checkvalues, truevalue, falsevalue, d):
     return falsevalue
 
 def contains_any(variable, checkvalues, truevalue, falsevalue, d):
+    """Check if a variable contains any values specified.
+
+    Arguments:
+
+    variable -- the variable name. This will be fetched and expanded (using
+    d.getVar(variable)) and then split into a set().
+
+    checkvalues -- if this is a string it is split on whitespace into a set(),
+    otherwise coerced directly into a set().
+
+    truevalue -- the value to return if checkvalues is a subset of variable.
+
+    falsevalue -- the value to return if variable is empty or if checkvalues is
+    not a subset of variable.
+
+    d -- the data store.
+    """
     val = d.getVar(variable)
     if not val:
         return falsevalue
@@ -1148,7 +1178,7 @@ def edit_metadata(meta_lines, variables, varfunc, match_overrides=False):
         variables: a list of variable names to look for. Functions
             may also be specified, but must be specified with '()' at
             the end of the name. Note that the function doesn't have
-            any intrinsic understanding of _append, _prepend, _remove,
+            any intrinsic understanding of :append, :prepend, :remove,
             or overrides, so these are considered as part of the name.
             These values go into a regular expression, so regular
             expression syntax is allowed.
@@ -1560,8 +1590,8 @@ def set_process_name(name):
     except:
         pass
 
-# export common proxies variables from datastore to environment
 def export_proxies(d):
+    """ export common proxies variables from datastore to environment """
     import os
 
     variables = ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY',
@@ -1583,12 +1613,12 @@ def export_proxies(d):
 
 def load_plugins(logger, plugins, pluginpath):
     def load_plugin(name):
-        logger.debug(1, 'Loading plugin %s' % name)
+        logger.debug('Loading plugin %s' % name)
         spec = importlib.machinery.PathFinder.find_spec(name, path=[pluginpath] )
         if spec:
             return spec.loader.load_module()
 
-    logger.debug(1, 'Loading plugins from %s...' % pluginpath)
+    logger.debug('Loading plugins from %s...' % pluginpath)
 
     expanded = (glob.glob(os.path.join(pluginpath, '*' + ext))
                 for ext in python_extensions)
@@ -1639,3 +1669,31 @@ def is_semver(version):
         return False
 
     return True
+
+# Wrapper around os.rename which can handle cross device problems
+# e.g. from container filesystems
+def rename(src, dst):
+    try:
+        os.rename(src, dst)
+    except OSError as err:
+        if err.errno == 18:
+            # Invalid cross-device link error
+            shutil.move(src, dst)
+        else:
+            raise err
+
+@contextmanager
+def environment(**envvars):
+    """
+    Context manager to selectively update the environment with the specified mapping.
+    """
+    backup = dict(os.environ)
+    try:
+        os.environ.update(envvars)
+        yield
+    finally:
+        for var in envvars:
+            if var in backup:
+                os.environ[var] = backup[var]
+            else:
+                del os.environ[var]

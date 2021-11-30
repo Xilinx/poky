@@ -1,5 +1,5 @@
 SUMMARY = "Text-based modem control and terminal emulation program"
-HOMEPAGE = "http://alioth.debian.org/projects/minicom/"
+HOMEPAGE = "https://salsa.debian.org/minicom-team/minicom"
 DESCRIPTION = "Minicom is a text-based modem control and terminal emulation program for Unix-like operating systems"
 SECTION = "console/network"
 DEPENDS = "ncurses virtual/libiconv"
@@ -28,6 +28,6 @@ do_install() {
 	for d in doc extras man lib src; do make -C $d DESTDIR=${D} install; done
 }
 
-RRECOMMENDS_${PN} += "lrzsz"
+RRECOMMENDS:${PN} += "lrzsz"
 
-RDEPENDS_${PN} += "ncurses-terminfo-base"
+RDEPENDS:${PN} += "ncurses-terminfo-base"

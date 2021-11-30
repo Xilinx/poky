@@ -1,4 +1,5 @@
 SUMMARY = "Matchbox Window Manager Desktop"
+DESCRIPTION = "A lightweight windows manager for embedded systems. It uses the desktop background to provide an application launcher and allows modules to be loaded for additional functionality."
 HOMEPAGE = "http://matchbox-project.org/"
 BUGTRACKER = "http://bugzilla.yoctoproject.org/"
 
@@ -25,9 +26,9 @@ inherit autotools pkgconfig features_check
 # The startup-notification requires x11 in DISTRO_FEATURES
 REQUIRED_DISTRO_FEATURES = "x11"
 
-do_install_append() {
+do_install:append() {
     install -d ${D}${datadir}/matchbox/vfolders/
     install -m 0644 ${WORKDIR}/vfolders/* ${D}${datadir}/matchbox/vfolders/
 }
 
-FILES_${PN} += "${datadir}/matchbox/vfolders/"
+FILES:${PN} += "${datadir}/matchbox/vfolders/"

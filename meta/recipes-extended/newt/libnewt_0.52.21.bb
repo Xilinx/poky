@@ -29,7 +29,7 @@ SRC_URI[sha256sum] = "265eb46b55d7eaeb887fca7a1d51fe115658882dfe148164b6c49fccac
 
 S = "${WORKDIR}/newt-${PV}"
 
-inherit autotools-brokensep python3native python3-dir
+inherit autotools-brokensep python3native python3-dir python3targetconfig
 
 EXTRA_OECONF = "--without-tcl --with-python"
 
@@ -39,20 +39,20 @@ CLEANBROKEN = "1"
 
 export CPPFLAGS
 
-PACKAGES_prepend = "whiptail ${PN}-python "
+PACKAGES:prepend = "whiptail ${PN}-python "
 
-RDEPENDS_${PN}-python += "python3-core"
-FILES_${PN}-python = "${PYTHON_SITEPACKAGES_DIR}/*"
+RDEPENDS:${PN}-python += "python3-core"
+FILES:${PN}-python = "${PYTHON_SITEPACKAGES_DIR}/*"
 
-do_configure_prepend() {
+do_configure:prepend() {
     sh autogen.sh
 }
 
-do_compile_prepend() {
+do_compile:prepend() {
     # Make sure the recompile is OK
     rm -f ${B}/.depend
 }
 
-FILES_whiptail = "${bindir}/whiptail"
+FILES:whiptail = "${bindir}/whiptail"
 
 BBCLASSEXTEND = "native nativesdk"

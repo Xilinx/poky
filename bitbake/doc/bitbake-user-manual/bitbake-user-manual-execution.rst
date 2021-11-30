@@ -16,7 +16,7 @@ data, or simply return information about the execution environment.
 
 This chapter describes BitBake's execution process from start to finish
 when you use it to create an image. The execution process is launched
-using the following command form: ::
+using the following command form::
 
   $ bitbake target
 
@@ -32,7 +32,7 @@ the BitBake command and its options, see ":ref:`The BitBake Command
    your project's ``local.conf`` configuration file.
 
    A common method to determine this value for your build host is to run
-   the following: ::
+   the following::
 
      $ grep processor /proc/cpuinfo
 
@@ -40,7 +40,7 @@ the BitBake command and its options, see ":ref:`The BitBake Command
    the number of processors, which takes into account hyper-threading.
    Thus, a quad-core build host with hyper-threading most likely shows
    eight processors, which is the value you would then assign to
-   ``BB_NUMBER_THREADS``.
+   :term:`BB_NUMBER_THREADS`.
 
    A possibly simpler solution is that some Linux distributions (e.g.
    Debian and Ubuntu) provide the ``ncpus`` command.
@@ -65,13 +65,13 @@ data itself is of various types:
 
 The ``layer.conf`` files are used to construct key variables such as
 :term:`BBPATH` and :term:`BBFILES`.
-``BBPATH`` is used to search for configuration and class files under the
-``conf`` and ``classes`` directories, respectively. ``BBFILES`` is used
+:term:`BBPATH` is used to search for configuration and class files under the
+``conf`` and ``classes`` directories, respectively. :term:`BBFILES` is used
 to locate both recipe and recipe append files (``.bb`` and
 ``.bbappend``). If there is no ``bblayers.conf`` file, it is assumed the
-user has set the ``BBPATH`` and ``BBFILES`` directly in the environment.
+user has set the :term:`BBPATH` and :term:`BBFILES` directly in the environment.
 
-Next, the ``bitbake.conf`` file is located using the ``BBPATH`` variable
+Next, the ``bitbake.conf`` file is located using the :term:`BBPATH` variable
 that was just constructed. The ``bitbake.conf`` file may also include
 other configuration files using the ``include`` or ``require``
 directives.
@@ -104,7 +104,7 @@ BitBake first searches the current working directory for an optional
 contain a :term:`BBLAYERS` variable that is a
 space-delimited list of 'layer' directories. Recall that if BitBake
 cannot find a ``bblayers.conf`` file, then it is assumed the user has
-set the ``BBPATH`` and ``BBFILES`` variables directly in the
+set the :term:`BBPATH` and :term:`BBFILES` variables directly in the
 environment.
 
 For each directory (layer) in this list, a ``conf/layer.conf`` file is
@@ -114,7 +114,7 @@ files automatically set up :term:`BBPATH` and other
 variables correctly for a given build directory.
 
 BitBake then expects to find the ``conf/bitbake.conf`` file somewhere in
-the user-specified ``BBPATH``. That configuration file generally has
+the user-specified :term:`BBPATH`. That configuration file generally has
 include directives to pull in any other metadata such as files specific
 to the architecture, the machine, the local environment, and so forth.
 
@@ -135,11 +135,11 @@ The ``base.bbclass`` file is always included. Other classes that are
 specified in the configuration using the
 :term:`INHERIT` variable are also included. BitBake
 searches for class files in a ``classes`` subdirectory under the paths
-in ``BBPATH`` in the same way as configuration files.
+in :term:`BBPATH` in the same way as configuration files.
 
 A good way to get an idea of the configuration files and the class files
 used in your execution environment is to run the following BitBake
-command: ::
+command::
 
   $ bitbake -e > mybb.log
 
@@ -155,7 +155,7 @@ execution environment.
    pair of curly braces in a shell function, the closing curly brace
    must not be located at the start of the line without leading spaces.
 
-   Here is an example that causes BitBake to produce a parsing error: ::
+   Here is an example that causes BitBake to produce a parsing error::
 
       fakeroot create_shar() {
          cat << "EOF" > ${SDK_DEPLOY}/${TOOLCHAIN_OUTPUTNAME}.sh
@@ -184,13 +184,13 @@ Locating and Parsing Recipes
 During the configuration phase, BitBake will have set
 :term:`BBFILES`. BitBake now uses it to construct a
 list of recipes to parse, along with any append files (``.bbappend``) to
-apply. ``BBFILES`` is a space-separated list of available files and
-supports wildcards. An example would be: ::
+apply. :term:`BBFILES` is a space-separated list of available files and
+supports wildcards. An example would be::
 
   BBFILES = "/path/to/bbfiles/*.bb /path/to/appends/*.bbappend"
 
 BitBake parses each
-recipe and append file located with ``BBFILES`` and stores the values of
+recipe and append file located with :term:`BBFILES` and stores the values of
 various variables into the datastore.
 
 .. note::
@@ -201,18 +201,18 @@ For each file, a fresh copy of the base configuration is made, then the
 recipe is parsed line by line. Any inherit statements cause BitBake to
 find and then parse class files (``.bbclass``) using
 :term:`BBPATH` as the search path. Finally, BitBake
-parses in order any append files found in ``BBFILES``.
+parses in order any append files found in :term:`BBFILES`.
 
 One common convention is to use the recipe filename to define pieces of
 metadata. For example, in ``bitbake.conf`` the recipe name and version
 are used to set the variables :term:`PN` and
-:term:`PV`: ::
+:term:`PV`::
 
-   PN = "${@bb.parse.BBHandler.vars_from_file(d.getVar('FILE', False),d)[0] or 'defaultpkgname'}"
-   PV = "${@bb.parse.BBHandler.vars_from_file(d.getVar('FILE', False),d)[1] or '1.0'}"
+   PN = "${@bb.parse.vars_from_file(d.getVar('FILE', False),d)[0] or 'defaultpkgname'}"
+   PV = "${@bb.parse.vars_from_file(d.getVar('FILE', False),d)[1] or '1.0'}"
 
 In this example, a recipe called "something_1.2.3.bb" would set
-``PN`` to "something" and ``PV`` to "1.2.3".
+:term:`PN` to "something" and :term:`PV` to "1.2.3".
 
 By the time parsing is complete for a recipe, BitBake has a list of
 tasks that the recipe defines and a set of data consisting of keys and
@@ -238,13 +238,14 @@ Recipe file collections exist to allow the user to have multiple
 repositories of ``.bb`` files that contain the same exact package. For
 example, one could easily use them to make one's own local copy of an
 upstream repository, but with custom modifications that one does not
-want upstream. Here is an example: ::
+want upstream. Here is an example::
 
   BBFILES = "/stuff/openembedded/*/*.bb /stuff/openembedded.modified/*/*.bb"
   BBFILE_COLLECTIONS = "upstream local"
   BBFILE_PATTERN_upstream = "^/stuff/openembedded/"
   BBFILE_PATTERN_local = "^/stuff/openembedded.modified/"
-  BBFILE_PRIORITY_upstream = "5" BBFILE_PRIORITY_local = "10"
+  BBFILE_PRIORITY_upstream = "5"
+  BBFILE_PRIORITY_local = "10"
 
 .. note::
 
@@ -259,21 +260,21 @@ Providers
 
 Assuming BitBake has been instructed to execute a target and that all
 the recipe files have been parsed, BitBake starts to figure out how to
-build the target. BitBake looks through the ``PROVIDES`` list for each
-of the recipes. A ``PROVIDES`` list is the list of names by which the
-recipe can be known. Each recipe's ``PROVIDES`` list is created
+build the target. BitBake looks through the :term:`PROVIDES` list for each
+of the recipes. A :term:`PROVIDES` list is the list of names by which the
+recipe can be known. Each recipe's :term:`PROVIDES` list is created
 implicitly through the recipe's :term:`PN` variable and
 explicitly through the recipe's :term:`PROVIDES`
 variable, which is optional.
 
-When a recipe uses ``PROVIDES``, that recipe's functionality can be
-found under an alternative name or names other than the implicit ``PN``
+When a recipe uses :term:`PROVIDES`, that recipe's functionality can be
+found under an alternative name or names other than the implicit :term:`PN`
 name. As an example, suppose a recipe named ``keyboard_1.0.bb``
-contained the following: ::
+contained the following::
 
   PROVIDES += "fullkeyboard"
 
-The ``PROVIDES``
+The :term:`PROVIDES`
 list for this recipe becomes "keyboard", which is implicit, and
 "fullkeyboard", which is explicit. Consequently, the functionality found
 in ``keyboard_1.0.bb`` can be found under two different names.
@@ -283,14 +284,14 @@ in ``keyboard_1.0.bb`` can be found under two different names.
 Preferences
 ===========
 
-The ``PROVIDES`` list is only part of the solution for figuring out a
+The :term:`PROVIDES` list is only part of the solution for figuring out a
 target's recipes. Because targets might have multiple providers, BitBake
 needs to prioritize providers by determining provider preferences.
 
 A common example in which a target has multiple providers is
-"virtual/kernel", which is on the ``PROVIDES`` list for each kernel
+"virtual/kernel", which is on the :term:`PROVIDES` list for each kernel
 recipe. Each machine often selects the best kernel provider by using a
-line similar to the following in the machine configuration file: ::
+line similar to the following in the machine configuration file::
 
   PREFERRED_PROVIDER_virtual/kernel = "linux-yocto"
 
@@ -308,10 +309,10 @@ specify a particular version. You can influence the order by using the
 :term:`DEFAULT_PREFERENCE` variable.
 
 By default, files have a preference of "0". Setting
-``DEFAULT_PREFERENCE`` to "-1" makes the recipe unlikely to be used
-unless it is explicitly referenced. Setting ``DEFAULT_PREFERENCE`` to
-"1" makes it likely the recipe is used. ``PREFERRED_VERSION`` overrides
-any ``DEFAULT_PREFERENCE`` setting. ``DEFAULT_PREFERENCE`` is often used
+:term:`DEFAULT_PREFERENCE` to "-1" makes the recipe unlikely to be used
+unless it is explicitly referenced. Setting :term:`DEFAULT_PREFERENCE` to
+"1" makes it likely the recipe is used. :term:`PREFERRED_VERSION` overrides
+any :term:`DEFAULT_PREFERENCE` setting. :term:`DEFAULT_PREFERENCE` is often used
 to mark newer and more experimental recipe versions until they have
 undergone sufficient testing to be considered stable.
 
@@ -330,7 +331,7 @@ If the first recipe is named ``a_1.1.bb``, then the
 
 Thus, if a recipe named ``a_1.2.bb`` exists, BitBake will choose 1.2 by
 default. However, if you define the following variable in a ``.conf``
-file that BitBake parses, you can change that preference: ::
+file that BitBake parses, you can change that preference::
 
   PREFERRED_VERSION_a = "1.1"
 
@@ -393,7 +394,7 @@ ready to run, those tasks have all their dependencies met, and the
 thread threshold has not been exceeded.
 
 It is worth noting that you can greatly speed up the build time by
-properly setting the ``BB_NUMBER_THREADS`` variable.
+properly setting the :term:`BB_NUMBER_THREADS` variable.
 
 As each task completes, a timestamp is written to the directory
 specified by the :term:`STAMP` variable. On subsequent
@@ -497,7 +498,7 @@ to the task.
 
 Like the working directory case, situations exist where dependencies
 should be ignored. For these cases, you can instruct the build process
-to ignore a dependency by using a line like the following: ::
+to ignore a dependency by using a line like the following::
 
   PACKAGE_ARCHS[vardepsexclude] = "MACHINE"
 
@@ -507,7 +508,7 @@ even if it does reference it.
 
 Equally, there are cases where we need to add dependencies BitBake is
 not able to find. You can accomplish this by using a line like the
-following: ::
+following::
 
   PACKAGE_ARCHS[vardeps] = "MACHINE"
 
@@ -535,7 +536,7 @@ configuration file, we can give BitBake some extra information to help
 it construct the basehash. The following statement effectively results
 in a list of global variable dependency excludes - variables never
 included in any checksum. This example uses variables from OpenEmbedded
-to help illustrate the concept: ::
+to help illustrate the concept::
 
    BB_HASHBASE_WHITELIST ?= "TMPDIR FILE PATH PWD BB_TASKHASH BBPATH DL_DIR \
        SSTATE_DIR THISDIR FILESEXTRAPATHS FILE_DIRNAME HOME LOGNAME SHELL \
@@ -556,11 +557,11 @@ OpenEmbedded-Core uses: "OEBasic" and "OEBasicHash". By default, there
 is a dummy "noop" signature handler enabled in BitBake. This means that
 behavior is unchanged from previous versions. ``OE-Core`` uses the
 "OEBasicHash" signature handler by default through this setting in the
-``bitbake.conf`` file: ::
+``bitbake.conf`` file::
 
   BB_SIGNATURE_HANDLER ?= "OEBasicHash"
 
-The "OEBasicHash" ``BB_SIGNATURE_HANDLER`` is the same as the "OEBasic"
+The "OEBasicHash" :term:`BB_SIGNATURE_HANDLER` is the same as the "OEBasic"
 version but adds the task hash to the stamp files. This results in any
 metadata change that changes the task hash, automatically causing the
 task to be run again. This removes the need to bump
@@ -577,10 +578,7 @@ the build. This information includes:
 -  ``BB_BASEHASH_``\ *filename:taskname*: The base hashes for each
    dependent task.
 
--  ``BBHASHDEPS_``\ *filename:taskname*: The task dependencies for
-   each task.
-
--  ``BB_TASKHASH``: The hash of the currently running task.
+-  :term:`BB_TASKHASH`: The hash of the currently running task.
 
 It is worth noting that BitBake's "-S" option lets you debug BitBake's
 processing of signatures. The options passed to -S allow different
@@ -646,13 +644,6 @@ compiled binary. To handle this, BitBake calls the
 :term:`BB_SETSCENE_DEPVALID` function for
 each successful setscene task to know whether or not it needs to obtain
 the dependencies of that task.
-
-Finally, after all the setscene tasks have executed, BitBake calls the
-function listed in
-:term:`BB_SETSCENE_VERIFY_FUNCTION2`
-with the list of tasks BitBake thinks has been "covered". The metadata
-can then ensure that this list is correct and can inform BitBake that it
-wants specific tasks to be run regardless of the setscene result.
 
 You can find more information on setscene metadata in the
 :ref:`bitbake-user-manual/bitbake-user-manual-metadata:task checksums and setscene`

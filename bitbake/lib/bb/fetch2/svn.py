@@ -57,7 +57,12 @@ class Svn(FetchMethod):
         if 'rev' in ud.parm:
             ud.revision = ud.parm['rev']
 
-        ud.localfile = d.expand('%s_%s_%s_%s_.tar.gz' % (ud.module.replace('/', '.'), ud.host, ud.path.replace('/', '.'), ud.revision))
+        # Whether to use the @REV peg-revision syntax in the svn command or not
+        ud.pegrevision = True
+        if 'nopegrevision' in ud.parm:
+            ud.pegrevision = False
+
+        ud.localfile = d.expand('%s_%s_%s_%s_%s.tar.gz' % (ud.module.replace('/', '.'), ud.host, ud.path.replace('/', '.'), ud.revision, ["0", "1"][ud.pegrevision]))
 
     def _buildsvncommand(self, ud, d, command):
         """
@@ -86,7 +91,7 @@ class Svn(FetchMethod):
         if command == "info":
             svncmd = "%s info %s %s://%s/%s/" % (ud.basecmd, " ".join(options), proto, svnroot, ud.module)
         elif command == "log1":
-            svncmd = "%s log --limit 1 %s %s://%s/%s/" % (ud.basecmd, " ".join(options), proto, svnroot, ud.module)
+            svncmd = "%s log --limit 1 --quiet %s %s://%s/%s/" % (ud.basecmd, " ".join(options), proto, svnroot, ud.module)
         else:
             suffix = ""
 
@@ -98,7 +103,8 @@ class Svn(FetchMethod):
 
             if ud.revision:
                 options.append("-r %s" % ud.revision)
-                suffix = "@%s" % (ud.revision)
+                if ud.pegrevision:
+                    suffix = "@%s" % (ud.revision)
 
             if command == "fetch":
                 transportuser = ud.parm.get("transportuser", "")
@@ -116,7 +122,7 @@ class Svn(FetchMethod):
     def download(self, ud, d):
         """Fetch url"""
 
-        logger.debug(2, "Fetch: checking for module directory '" + ud.moddir + "'")
+        logger.debug2("Fetch: checking for module directory '" + ud.moddir + "'")
 
         lf = bb.utils.lockfile(ud.svnlock)
 
@@ -129,7 +135,7 @@ class Svn(FetchMethod):
                     runfetchcmd(ud.basecmd + " upgrade", d, workdir=ud.moddir)
                 except FetchError:
                     pass
-                logger.debug(1, "Running %s", svncmd)
+                logger.debug("Running %s", svncmd)
                 bb.fetch2.check_network_access(d, svncmd, ud.url)
                 runfetchcmd(svncmd, d, workdir=ud.moddir)
             else:
@@ -137,7 +143,7 @@ class Svn(FetchMethod):
                 logger.info("Fetch " + ud.url)
                 # check out sources there
                 bb.utils.mkdirhier(ud.pkgdir)
-                logger.debug(1, "Running %s", svncmd)
+                logger.debug("Running %s", svncmd)
                 bb.fetch2.check_network_access(d, svncmd, ud.url)
                 runfetchcmd(svncmd, d, workdir=ud.pkgdir)
 

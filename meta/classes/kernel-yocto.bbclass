@@ -36,7 +36,10 @@ def find_patches(d,subdir):
             if subdir == patchdir:
                 patch_list.append(local)
         else:
-            patch_list.append(local)
+            # skip the patch if a patchdir was supplied, it won't be handled
+            # properly
+            if not patchdir:
+                patch_list.append(local)
 
     return patch_list
 
@@ -112,6 +115,8 @@ do_kernel_metadata() {
 
 	cd ${S}
 	export KMETA=${KMETA}
+
+	bbnote "do_kernel_metadata: for summary/debug, set KCONF_AUDIT_LEVEL > 0"
 
 	# if kernel tools are available in-tree, they are preferred
 	# and are placed on the path before any external tools. Unless
@@ -290,6 +295,21 @@ do_kernel_metadata() {
 			fi
 		fi
 	fi
+
+	if [ ${KCONF_AUDIT_LEVEL} -gt 0 ]; then
+		bbnote "kernel meta data summary for ${KMACHINE} (${LINUX_KERNEL_TYPE}):"
+		bbnote "======================================================================"
+		if [ -n "${KMETA_EXTERNAL_BSPS}" ]; then
+			bbnote "Non kernel-cache (external) bsp"
+		fi
+		bbnote "BSP entry point / definition: $bsp_definition"
+		if [ -n "$in_tree_defconfig" ]; then
+			bbnote "KBUILD_DEFCONFIG: ${KBUILD_DEFCONFIG}"
+		fi
+		bbnote "Fragments from SRC_URI: $sccs_from_src_uri"
+		bbnote "KERNEL_FEATURES: $KERNEL_FEATURES_FINAL"
+		bbnote "Final scc/cfg list: $sccs_defconfig $bsp_definition $sccs $KERNEL_FEATURES_FINAL"
+	fi
 }
 
 do_patch() {
@@ -341,6 +361,21 @@ do_kernel_checkout() {
 			fi
 		fi
 		cd ${S}
+
+		# convert any remote branches to local tracking ones
+		for i in `git branch -a --no-color | grep remotes | grep -v HEAD`; do
+			b=`echo $i | cut -d' ' -f2 | sed 's%remotes/origin/%%'`;
+			git show-ref --quiet --verify -- "refs/heads/$b"
+			if [ $? -ne 0 ]; then
+				git branch $b $i > /dev/null
+			fi
+		done
+
+		# Create a working tree copy of the kernel by checking out a branch
+		machine_branch="${@ get_machine_branch(d, "${KBRANCH}" )}"
+
+		# checkout and clobber any unimportant files
+		git checkout -f ${machine_branch}
 	else
 		# case: we have no git repository at all. 
 		# To support low bandwidth options for building the kernel, we'll just 
@@ -362,23 +397,8 @@ do_kernel_checkout() {
 		git commit -q -m "baseline commit: creating repo for ${PN}-${PV}"
 		git clean -d -f
 	fi
-
-	# convert any remote branches to local tracking ones
-	for i in `git branch -a --no-color | grep remotes | grep -v HEAD`; do
-		b=`echo $i | cut -d' ' -f2 | sed 's%remotes/origin/%%'`;
-		git show-ref --quiet --verify -- "refs/heads/$b"
-		if [ $? -ne 0 ]; then
-			git branch $b $i > /dev/null
-		fi
-	done
-
-	# Create a working tree copy of the kernel by checking out a branch
-	machine_branch="${@ get_machine_branch(d, "${KBRANCH}" )}"
-
-	# checkout and clobber any unimportant files
-	git checkout -f ${machine_branch}
 }
-do_kernel_checkout[dirs] = "${S}"
+do_kernel_checkout[dirs] = "${S} ${WORKDIR}"
 
 addtask kernel_checkout before do_kernel_metadata after do_symlink_kernsrc
 addtask kernel_metadata after do_validate_branches do_unpack before do_patch
@@ -403,11 +423,11 @@ do_kernel_configme() {
 		*alldefconfig)
 			config_flags=""
 			;;
-	    *)
-		if [ -f ${WORKDIR}/defconfig ]; then
-			config_flags="-n"
-		fi
-	    ;;
+		*)
+			if [ -f ${WORKDIR}/defconfig ]; then
+				config_flags="-n"
+			fi
+			;;
 	esac
 
 	cd ${S}
@@ -457,7 +477,7 @@ python do_config_analysis() {
     env['srctree'] = s
 
     # read specific symbols from the kernel recipe or from local.conf
-    # i.e.: CONFIG_ANALYSIS_pn-linux-yocto-dev = 'NF_CONNTRACK LOCALVERSION'
+    # i.e.: CONFIG_ANALYSIS:pn-linux-yocto-dev = 'NF_CONNTRACK LOCALVERSION'
     config = d.getVar( 'CONFIG_ANALYSIS' )
     if not config:
        config = [ "" ]
@@ -614,7 +634,31 @@ do_validate_branches() {
 	# if SRCREV is AUTOREV it shows up as AUTOINC there's nothing to
 	# check and we can exit early
 	if [ "${machine_srcrev}" = "AUTOINC" ]; then
+	    linux_yocto_dev='${@oe.utils.conditional("PREFERRED_PROVIDER_virtual/kernel", "linux-yocto-dev", "1", "", d)}'
+	    if [ -n "$linux_yocto_dev" ]; then
+		git checkout -q -f ${machine_branch}
+		ver=$(grep "^VERSION =" ${S}/Makefile | sed s/.*=\ *//)
+		patchlevel=$(grep "^PATCHLEVEL =" ${S}/Makefile | sed s/.*=\ *//)
+		sublevel=$(grep "^SUBLEVEL =" ${S}/Makefile | sed s/.*=\ *//)
+		kver="$ver.$patchlevel"
+		bbnote "dev kernel: performing version -> branch -> SRCREV validation"
+		bbnote "dev kernel: recipe version ${LINUX_VERSION}, src version: $kver"
+		echo "${LINUX_VERSION}" | grep -q $kver
+		if [ $? -ne 0 ]; then
+		    version="$(echo ${LINUX_VERSION} | sed 's/\+.*$//g')"
+		    versioned_branch="v$version/$machine_branch"
+
+		    machine_branch=$versioned_branch
+		    force_srcrev="$(git rev-parse $machine_branch 2> /dev/null)"
+		    if [ $? -ne 0 ]; then
+			bbfatal "kernel version mismatch detected, and no valid branch $machine_branch detected"
+		    fi
+
+		    bbnote "dev kernel: adjusting branch to $machine_branch, srcrev to: $force_srcrev"
+		fi
+	    else
 		bbnote "SRCREV validation is not required for AUTOREV"
+	    fi
 	elif [ "${machine_srcrev}" = "" ]; then
 		if [ "${SRCREV}" != "AUTOINC" ] && [ "${SRCREV}" != "INVALID" ]; then
 		       # SRCREV_machine_<MACHINE> was not set. This means that a custom recipe

@@ -5,6 +5,7 @@ SYSROOT_DIRS = " \
     ${base_libdir} \
     ${nonarch_base_libdir} \
     ${datadir} \
+    /sysroot-only \
 "
 
 # These directories are also staged in the sysroot when they contain files that
@@ -18,9 +19,9 @@ SYSROOT_DIRS_NATIVE = " \
     ${sysconfdir} \
     ${localstatedir} \
 "
-SYSROOT_DIRS_append_class-native = " ${SYSROOT_DIRS_NATIVE}"
-SYSROOT_DIRS_append_class-cross = " ${SYSROOT_DIRS_NATIVE}"
-SYSROOT_DIRS_append_class-crosssdk = " ${SYSROOT_DIRS_NATIVE}"
+SYSROOT_DIRS:append:class-native = " ${SYSROOT_DIRS_NATIVE}"
+SYSROOT_DIRS:append:class-cross = " ${SYSROOT_DIRS_NATIVE}"
+SYSROOT_DIRS:append:class-crosssdk = " ${SYSROOT_DIRS_NATIVE}"
 
 # These directories will not be staged in the sysroot
 SYSROOT_DIRS_BLACKLIST = " \
@@ -81,7 +82,7 @@ python sysroot_strip () {
     pn = d.getVar('PN')
     libdir = d.getVar("libdir")
     base_libdir = d.getVar("base_libdir")
-    qa_already_stripped = 'already-stripped' in (d.getVar('INSANE_SKIP_' + pn) or "").split()
+    qa_already_stripped = 'already-stripped' in (d.getVar('INSANE_SKIP:' + pn) or "").split()
     strip_cmd = d.getVar("STRIP")
 
     oe.package.strip_execs(pn, dstdir, strip_cmd, libdir, base_libdir, d,
@@ -89,7 +90,6 @@ python sysroot_strip () {
 }
 
 do_populate_sysroot[dirs] = "${SYSROOT_DESTDIR}"
-do_populate_sysroot[umask] = "022"
 
 addtask populate_sysroot after do_install
 
@@ -118,8 +118,8 @@ do_populate_sysroot[vardeps] += "${SYSROOT_PREPROCESS_FUNCS}"
 do_populate_sysroot[vardepsexclude] += "MULTI_PROVIDER_WHITELIST"
 
 POPULATESYSROOTDEPS = ""
-POPULATESYSROOTDEPS_class-target = "virtual/${MLPREFIX}${TARGET_PREFIX}binutils:do_populate_sysroot"
-POPULATESYSROOTDEPS_class-nativesdk = "virtual/${TARGET_PREFIX}binutils-crosssdk:do_populate_sysroot"
+POPULATESYSROOTDEPS:class-target = "virtual/${MLPREFIX}${TARGET_PREFIX}binutils:do_populate_sysroot"
+POPULATESYSROOTDEPS:class-nativesdk = "virtual/${TARGET_PREFIX}binutils-crosssdk:do_populate_sysroot"
 do_populate_sysroot[depends] += "${POPULATESYSROOTDEPS}"
 
 SSTATETASKS += "do_populate_sysroot"
@@ -306,6 +306,7 @@ python extend_recipe_sysroot() {
     sstatetasks = d.getVar("SSTATETASKS").split()
     # Add recipe specific tasks referenced by setscene_depvalid()
     sstatetasks.append("do_stash_locale")
+    sstatetasks.append("do_deploy")
 
     def print_dep_tree(deptree):
         data = ""
@@ -409,7 +410,7 @@ python extend_recipe_sysroot() {
         if os.path.islink(f) and not os.path.exists(f):
             bb.note("%s no longer exists, removing from sysroot" % f)
             lnk = os.readlink(f.replace(".complete", ""))
-            sstate_clean_manifest(depdir + "/" + lnk, d, workdir)
+            sstate_clean_manifest(depdir + "/" + lnk, d, canrace=True, prefix=workdir)
             os.unlink(f)
             os.unlink(f.replace(".complete", ""))
 
@@ -454,7 +455,7 @@ python extend_recipe_sysroot() {
             fl = depdir + "/" + l
             bb.note("Task %s no longer depends on %s, removing from sysroot" % (mytaskname, l))
             lnk = os.readlink(fl)
-            sstate_clean_manifest(depdir + "/" + lnk, d, workdir)
+            sstate_clean_manifest(depdir + "/" + lnk, d, canrace=True, prefix=workdir)
             os.unlink(fl)
             os.unlink(fl + ".complete")
 
@@ -475,7 +476,7 @@ python extend_recipe_sysroot() {
                 continue
             else:
                 bb.note("%s exists in sysroot, but is stale (%s vs. %s), removing." % (c, lnk, c + "." + taskhash))
-                sstate_clean_manifest(depdir + "/" + lnk, d, workdir)
+                sstate_clean_manifest(depdir + "/" + lnk, d, canrace=True, prefix=workdir)
                 os.unlink(depdir + "/" + c)
                 if os.path.lexists(depdir + "/" + c + ".complete"):
                     os.unlink(depdir + "/" + c + ".complete")

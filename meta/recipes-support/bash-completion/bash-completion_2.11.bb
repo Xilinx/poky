@@ -1,6 +1,11 @@
 SUMMARY = "Programmable Completion for Bash 4"
-HOMEPAGE = "http://bash-completion.alioth.debian.org/"
-BUGTRACKER = "https://alioth.debian.org/projects/bash-completion/"
+DESCRIPTION = "Collection of command line command completions for the Bash shell, \
+collection of helper functions to assist in creating new completions, \
+and set of facilities for loading completions automatically on demand, as well \
+as installing them."
+
+HOMEPAGE = "https://github.com/scop/bash-completion"
+BUGTRACKER = "https://github.com/scop/bash-completion/issues"
 
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://COPYING;md5=751419260aa954499f7abaabaa882bbe"
@@ -18,20 +23,18 @@ PARALLEL_MAKE = ""
 
 inherit autotools
 
-do_install_append() {
+do_install:append() {
 	# compatdir
 	install -d ${D}${sysconfdir}/bash_completion.d/
 	echo '. ${datadir}/${BPN}/bash_completion' >${D}${sysconfdir}/bash_completion
 
 }
 
-RDEPENDS_${PN} = "bash"
+RDEPENDS:${PN} = "bash"
 
 # Some recipes are providing ${PN}-bash-completion packages
 PACKAGES =+ "${PN}-extra"
-FILES_${PN}-extra = "${datadir}/${BPN}/completions/ \
+FILES:${PN}-extra = "${datadir}/${BPN}/completions/ \
     ${datadir}/${BPN}/helpers/"
-
-FILES_${PN}-dev += "${datadir}/cmake"
 
 BBCLASSEXTEND = "nativesdk"

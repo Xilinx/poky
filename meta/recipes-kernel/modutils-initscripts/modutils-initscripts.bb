@@ -10,7 +10,7 @@ PR = "r7"
 S = "${WORKDIR}"
 
 INITSCRIPT_NAME = "modutils.sh"
-INITSCRIPT_PARAMS = "start 05 S ."
+INITSCRIPT_PARAMS = "start 06 S ."
 
 inherit update-rc.d
 
@@ -22,8 +22,8 @@ do_install () {
 	install -m 0755 ${WORKDIR}/modutils.sh ${D}${sysconfdir}/init.d/
 }
 
-PACKAGE_WRITE_DEPS_append = " ${@bb.utils.contains('DISTRO_FEATURES','systemd','systemd-systemctl-native','',d)}"
-pkg_postinst_${PN} () {
+PACKAGE_WRITE_DEPS:append = " ${@bb.utils.contains('DISTRO_FEATURES','systemd','systemd-systemctl-native','',d)}"
+pkg_postinst:${PN} () {
 	if type systemctl >/dev/null 2>/dev/null; then
 		if [ -n "$D" ]; then
 			OPTS="--root=$D"

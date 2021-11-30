@@ -254,13 +254,13 @@ def add(args, config, basepath, workspace):
                 f.write('\n# initial_rev: %s\n' % initial_rev)
 
             if args.binary:
-                f.write('do_install_append() {\n')
+                f.write('do_install:append() {\n')
                 f.write('    rm -rf ${D}/.git\n')
                 f.write('    rm -f ${D}/singletask.lock\n')
                 f.write('}\n')
 
             if bb.data.inherits_class('npm', rd):
-                f.write('python do_configure_append() {\n')
+                f.write('python do_configure:append() {\n')
                 f.write('    pkgdir = d.getVar("NPM_PACKAGE")\n')
                 f.write('    lockfile = os.path.join(pkgdir, "singletask.lock")\n')
                 f.write('    bb.utils.remove(lockfile)\n')
@@ -316,10 +316,6 @@ def _check_compatible_recipe(pn, d):
 
     if bb.data.inherits_class('packagegroup', d):
         raise DevtoolError("The %s recipe is a packagegroup, and therefore is "
-                           "not supported by this tool" % pn, 4)
-
-    if bb.data.inherits_class('meta', d):
-        raise DevtoolError("The %s recipe is a meta-recipe, and therefore is "
                            "not supported by this tool" % pn, 4)
 
     if bb.data.inherits_class('externalsrc', d) and d.getVar('EXTERNALSRC'):
@@ -523,7 +519,7 @@ def _extract_source(srctree, keep_temp, devbranch, sync, config, basepath, works
         history = d.varhistory.variable('SRC_URI')
         for event in history:
             if not 'flag' in event:
-                if event['op'].startswith(('_append[', '_prepend[')):
+                if event['op'].startswith((':append[', ':prepend[')):
                     extra_overrides.append(event['op'].split('[')[1].split(']')[0])
         # We want to remove duplicate overrides. If a recipe had multiple
         # SRC_URI_override += values it would cause mulitple instances of
@@ -746,7 +742,7 @@ def _check_preserve(config, recipename):
                         os.remove(removefile)
                 else:
                     tf.write(line)
-    os.rename(newfile, origfile)
+    bb.utils.rename(newfile, origfile)
 
 def get_staging_kver(srcdir):
     # Kernel version from work-shared
@@ -936,36 +932,36 @@ def modify(args, config, basepath, workspace):
 
         bb.utils.mkdirhier(os.path.dirname(appendfile))
         with open(appendfile, 'w') as f:
-            f.write('FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"\n')
+            f.write('FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"\n')
             # Local files can be modified/tracked in separate subdir under srctree
             # Mostly useful for packages with S != WORKDIR
-            f.write('FILESPATH_prepend := "%s:"\n' %
+            f.write('FILESPATH:prepend := "%s:"\n' %
                     os.path.join(srctreebase, 'oe-local-files'))
             f.write('# srctreebase: %s\n' % srctreebase)
 
             f.write('\ninherit externalsrc\n')
             f.write('# NOTE: We use pn- overrides here to avoid affecting multiple variants in the case where the recipe uses BBCLASSEXTEND\n')
-            f.write('EXTERNALSRC_pn-%s = "%s"\n' % (pn, srctree))
+            f.write('EXTERNALSRC:pn-%s = "%s"\n' % (pn, srctree))
 
             b_is_s = use_external_build(args.same_dir, args.no_same_dir, rd)
             if b_is_s:
-                f.write('EXTERNALSRC_BUILD_pn-%s = "%s"\n' % (pn, srctree))
+                f.write('EXTERNALSRC_BUILD:pn-%s = "%s"\n' % (pn, srctree))
 
             if bb.data.inherits_class('kernel', rd):
                 f.write('SRCTREECOVEREDTASKS = "do_validate_branches do_kernel_checkout '
                         'do_fetch do_unpack do_kernel_configcheck"\n')
                 f.write('\ndo_patch[noexec] = "1"\n')
-                f.write('\ndo_configure_append() {\n'
+                f.write('\ndo_configure:append() {\n'
                         '    cp ${B}/.config ${S}/.config.baseline\n'
                         '    ln -sfT ${B}/.config ${S}/.config.new\n'
                         '}\n')
-                f.write('\ndo_kernel_configme_prepend() {\n'
+                f.write('\ndo_kernel_configme:prepend() {\n'
                         '    if [ -e ${S}/.config ]; then\n'
                         '        mv ${S}/.config ${S}/.config.old\n'
                         '    fi\n'
                         '}\n')
             if rd.getVarFlag('do_menuconfig','task'):
-                f.write('\ndo_configure_append() {\n'
+                f.write('\ndo_configure:append() {\n'
                 '    if [ ! ${DEVTOOL_DISABLE_MENUCONFIG} ]; then\n'
                 '        cp ${B}/.config ${S}/.config.baseline\n'
                 '        ln -sfT ${B}/.config ${S}/.config.new\n'
@@ -1094,10 +1090,10 @@ def rename(args, config, basepath, workspace):
 
     # Rename bbappend
     logger.info('Renaming %s to %s' % (append, newappend))
-    os.rename(append, newappend)
+    bb.utils.rename(append, newappend)
     # Rename recipe file
     logger.info('Renaming %s to %s' % (recipefile, newfile))
-    os.rename(recipefile, newfile)
+    bb.utils.rename(recipefile, newfile)
 
     # Rename source tree if it's the default path
     appendmd5 = None
@@ -1333,7 +1329,7 @@ def _export_patches(srctree, rd, start_rev, destdir, changed_revs=None):
         if match_name:
             # Rename patch files
             if new_patch != match_name:
-                os.rename(os.path.join(destdir, new_patch),
+                bb.utils.rename(os.path.join(destdir, new_patch),
                           os.path.join(destdir, match_name))
             # Need to pop it off the list now before checking changed_revs
             oldpath = existing_patches.pop(old_patch)

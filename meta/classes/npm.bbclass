@@ -19,8 +19,8 @@
 
 inherit python3native
 
-DEPENDS_prepend = "nodejs-native "
-RDEPENDS_${PN}_append_class-target = " nodejs"
+DEPENDS:prepend = "nodejs-native "
+RDEPENDS:${PN}:append:class-target = " nodejs"
 
 NPM_INSTALL_DEV ?= "0"
 
@@ -247,8 +247,10 @@ python npm_do_compile() {
         # Add node-gyp configuration
         configs.append(("arch", d.getVar("NPM_ARCH")))
         configs.append(("release", "true"))
-        sysroot = d.getVar("RECIPE_SYSROOT_NATIVE")
-        nodedir = os.path.join(sysroot, d.getVar("prefix_native").strip("/"))
+        nodedir = d.getVar("NPM_NODEDIR")
+        if not nodedir:
+            sysroot = d.getVar("RECIPE_SYSROOT_NATIVE")
+            nodedir = os.path.join(sysroot, d.getVar("prefix_native").strip("/"))
         configs.append(("nodedir", nodedir))
         configs.append(("python", d.getVar("PYTHON")))
 
@@ -310,7 +312,7 @@ npm_do_install() {
     ln -fs node_modules ${D}/${nonarch_libdir}/node
 }
 
-FILES_${PN} += " \
+FILES:${PN} += " \
     ${bindir} \
     ${nonarch_libdir} \
 "

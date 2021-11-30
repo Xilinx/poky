@@ -228,7 +228,7 @@ class SignatureGeneratorBasic(SignatureGenerator):
         #    self.dump_sigtask(fn, task, d.getVar("STAMP"), False)
 
         for task in taskdeps:
-            d.setVar("BB_BASEHASH_task-%s" % task, self.basehash[fn + ":" + task])
+            d.setVar("BB_BASEHASH:task-%s" % task, self.basehash[fn + ":" + task])
 
     def postparsing_clean_cache(self):
         #
@@ -311,13 +311,7 @@ class SignatureGeneratorBasic(SignatureGenerator):
 
         data = self.basehash[tid]
         for dep in self.runtaskdeps[tid]:
-            if dep in self.unihash:
-                if self.unihash[dep] is None:
-                    data = data + self.taskhash[dep]
-                else:
-                    data = data + self.unihash[dep]
-            else:
-                data = data + self.get_unihash(dep)
+            data = data + self.get_unihash(dep)
 
         for (f, cs) in self.file_checksum_values[tid]:
             if cs:
@@ -331,7 +325,7 @@ class SignatureGeneratorBasic(SignatureGenerator):
 
         h = hashlib.sha256(data.encode("utf-8")).hexdigest()
         self.taskhash[tid] = h
-        #d.setVar("BB_TASKHASH_task-%s" % task, taskhash[task])
+        #d.setVar("BB_TASKHASH:task-%s" % task, taskhash[task])
         return h
 
     def writeout_file_checksum_cache(self):
@@ -408,7 +402,7 @@ class SignatureGeneratorBasic(SignatureGenerator):
                 p = pickle.dump(data, stream, -1)
                 stream.flush()
             os.chmod(tmpfile, 0o664)
-            os.rename(tmpfile, sigfile)
+            bb.utils.rename(tmpfile, sigfile)
         except (OSError, IOError) as err:
             try:
                 os.unlink(tmpfile)
@@ -547,8 +541,8 @@ class SignatureGeneratorUniHashMixIn(object):
                 # is much more interesting, so it is reported at debug level 1
                 hashequiv_logger.debug((1, 2)[unihash == taskhash], 'Found unihash %s in place of %s for %s from %s' % (unihash, taskhash, tid, self.server))
             else:
-                hashequiv_logger.debug(2, 'No reported unihash for %s:%s from %s' % (tid, taskhash, self.server))
-        except hashserv.client.HashConnectionError as e:
+                hashequiv_logger.debug2('No reported unihash for %s:%s from %s' % (tid, taskhash, self.server))
+        except ConnectionError as e:
             bb.warn('Error contacting Hash Equivalence Server %s: %s' % (self.server, str(e)))
 
         self.set_unihash(tid, unihash)
@@ -621,13 +615,13 @@ class SignatureGeneratorUniHashMixIn(object):
                 new_unihash = data['unihash']
 
                 if new_unihash != unihash:
-                    hashequiv_logger.debug(1, 'Task %s unihash changed %s -> %s by server %s' % (taskhash, unihash, new_unihash, self.server))
+                    hashequiv_logger.debug('Task %s unihash changed %s -> %s by server %s' % (taskhash, unihash, new_unihash, self.server))
                     bb.event.fire(bb.runqueue.taskUniHashUpdate(fn + ':do_' + task, new_unihash), d)
                     self.set_unihash(tid, new_unihash)
                     d.setVar('BB_UNIHASH', new_unihash)
                 else:
-                    hashequiv_logger.debug(1, 'Reported task %s as unihash %s to %s' % (taskhash, unihash, self.server))
-            except hashserv.client.HashConnectionError as e:
+                    hashequiv_logger.debug('Reported task %s as unihash %s to %s' % (taskhash, unihash, self.server))
+            except ConnectionError as e:
                 bb.warn('Error contacting Hash Equivalence Server %s: %s' % (self.server, str(e)))
         finally:
             if sigfile:
@@ -667,7 +661,7 @@ class SignatureGeneratorUniHashMixIn(object):
                 # TODO: What to do here?
                 hashequiv_logger.verbose('Task %s unihash reported as unwanted hash %s' % (tid, finalunihash))
 
-        except hashserv.client.HashConnectionError as e:
+        except ConnectionError as e:
             bb.warn('Error contacting Hash Equivalence Server %s: %s' % (self.server, str(e)))
 
         return False
@@ -754,7 +748,7 @@ def clean_basepath(basepath):
     if basepath[0] == '/':
         return cleaned
 
-    if basepath.startswith("mc:"):
+    if basepath.startswith("mc:") and basepath.count(':') >= 2:
         mc, mc_name, basepath = basepath.split(":", 2)
         mc_suffix = ':mc:' + mc_name
     else:
@@ -870,21 +864,21 @@ def compare_sigfiles(a, b, recursecb=None, color=False, collapsed=False):
 
     changed, added, removed = dict_diff(a_data['gendeps'], b_data['gendeps'], a_data['basewhitelist'] & b_data['basewhitelist'])
     if changed:
-        for dep in changed:
+        for dep in sorted(changed):
             output.append(color_format("{color_title}List of dependencies for variable %s changed from '{color_default}%s{color_title}' to '{color_default}%s{color_title}'") % (dep, a_data['gendeps'][dep], b_data['gendeps'][dep]))
             if a_data['gendeps'][dep] and b_data['gendeps'][dep]:
                 output.append("changed items: %s" % a_data['gendeps'][dep].symmetric_difference(b_data['gendeps'][dep]))
     if added:
-        for dep in added:
+        for dep in sorted(added):
             output.append(color_format("{color_title}Dependency on variable %s was added") % (dep))
     if removed:
-        for dep in removed:
+        for dep in sorted(removed):
             output.append(color_format("{color_title}Dependency on Variable %s was removed") % (dep))
 
 
     changed, added, removed = dict_diff(a_data['varvals'], b_data['varvals'])
     if changed:
-        for dep in changed:
+        for dep in sorted(changed):
             oldval = a_data['varvals'][dep]
             newval = b_data['varvals'][dep]
             if newval and oldval and ('\n' in oldval or '\n' in newval):
@@ -954,7 +948,7 @@ def compare_sigfiles(a, b, recursecb=None, color=False, collapsed=False):
         b = b_data['runtaskhashes']
         changed, added, removed = dict_diff(a, b)
         if added:
-            for dep in added:
+            for dep in sorted(added):
                 bdep_found = False
                 if removed:
                     for bdep in removed:
@@ -964,7 +958,7 @@ def compare_sigfiles(a, b, recursecb=None, color=False, collapsed=False):
                 if not bdep_found:
                     output.append(color_format("{color_title}Dependency on task %s was added{color_default} with hash %s") % (clean_basepath(dep), b[dep]))
         if removed:
-            for dep in removed:
+            for dep in sorted(removed):
                 adep_found = False
                 if added:
                     for adep in added:
@@ -974,7 +968,7 @@ def compare_sigfiles(a, b, recursecb=None, color=False, collapsed=False):
                 if not adep_found:
                     output.append(color_format("{color_title}Dependency on task %s was removed{color_default} with hash %s") % (clean_basepath(dep), a[dep]))
         if changed:
-            for dep in changed:
+            for dep in sorted(changed):
                 if not collapsed:
                     output.append(color_format("{color_title}Hash for dependent task %s changed{color_default} from %s to %s") % (clean_basepath(dep), a[dep], b[dep]))
                 if callable(recursecb):

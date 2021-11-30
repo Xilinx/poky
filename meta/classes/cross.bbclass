@@ -7,7 +7,7 @@ EXCLUDE_FROM_WORLD = "1"
 CLASSOVERRIDE = "class-cross"
 PACKAGES = ""
 PACKAGES_DYNAMIC = ""
-PACKAGES_DYNAMIC_class-native = ""
+PACKAGES_DYNAMIC:class-native = ""
 
 HOST_ARCH = "${BUILD_ARCH}"
 HOST_VENDOR = "${BUILD_VENDOR}"
@@ -71,10 +71,6 @@ libexecdir = "${exec_prefix}/libexec/${CROSS_TARGET_SYS_DIR}"
 
 do_populate_sysroot[sstate-inputdirs] = "${SYSROOT_DESTDIR}/${STAGING_DIR_NATIVE}/"
 do_packagedata[stamp-extra-info] = ""
-
-do_install () {
-	oe_runmake 'DESTDIR=${D}' install
-}
 
 USE_NLS = "no"
 

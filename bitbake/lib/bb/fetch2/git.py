@@ -68,6 +68,7 @@ import subprocess
 import tempfile
 import bb
 import bb.progress
+from contextlib import contextmanager
 from   bb.fetch2 import FetchMethod
 from   bb.fetch2 import runfetchcmd
 from   bb.fetch2 import logger
@@ -141,6 +142,10 @@ class Git(FetchMethod):
             ud.proto = 'file'
         else:
             ud.proto = "git"
+        if ud.host == "github.com" and ud.proto == "git":
+            # github stopped supporting git protocol
+            # https://github.blog/2021-09-01-improving-git-protocol-security-github/#no-more-unauthenticated-git
+            ud.proto = "https"
 
         if not ud.proto in ('git', 'file', 'ssh', 'http', 'https', 'rsync'):
             raise bb.fetch2.ParameterError("Invalid protocol type", ud.url)
@@ -168,7 +173,11 @@ class Git(FetchMethod):
         if len(branches) != len(ud.names):
             raise bb.fetch2.ParameterError("The number of name and branch parameters is not balanced", ud.url)
 
-        ud.cloneflags = "-s -n"
+        ud.noshared = d.getVar("BB_GIT_NOSHARED") == "1"
+
+        ud.cloneflags = "-n"
+        if not ud.noshared:
+            ud.cloneflags += " -s"
         if ud.bareclone:
             ud.cloneflags += " --mirror"
 
@@ -220,9 +229,14 @@ class Git(FetchMethod):
             ud.shallow = False
 
         if ud.usehead:
-            ud.unresolvedrev['default'] = 'HEAD'
+            # When usehead is set let's associate 'HEAD' with the unresolved
+            # rev of this repository. This will get resolved into a revision
+            # later. If an actual revision happens to have also been provided
+            # then this setting will be overridden.
+            for name in ud.names:
+                ud.unresolvedrev[name] = 'HEAD'
 
-        ud.basecmd = d.getVar("FETCHCMD_git") or "git -c core.fsyncobjectfiles=0"
+        ud.basecmd = d.getVar("FETCHCMD_git") or "git -c core.fsyncobjectfiles=0 -c gc.autoDetach=false"
 
         write_tarballs = d.getVar("BB_GENERATE_MIRROR_TARBALLS") or "0"
         ud.write_tarballs = write_tarballs != "0" or ud.rebaseable
@@ -389,7 +403,7 @@ class Git(FetchMethod):
             tmpdir = tempfile.mkdtemp(dir=d.getVar('DL_DIR'))
             try:
                 # Do the checkout. This implicitly involves a Git LFS fetch.
-                self.unpack(ud, tmpdir, d)
+                Git.unpack(self, ud, tmpdir, d)
 
                 # Scoop up a copy of any stuff that Git LFS downloaded. Merge them into
                 # the bare clonedir.
@@ -409,6 +423,20 @@ class Git(FetchMethod):
                 bb.utils.remove(tmpdir, recurse=True)
 
     def build_mirror_data(self, ud, d):
+
+        # Create as a temp file and move atomically into position to avoid races
+        @contextmanager
+        def create_atomic(filename):
+            fd, tfile = tempfile.mkstemp(dir=os.path.dirname(filename))
+            try:
+                yield tfile
+                umask = os.umask(0o666)
+                os.umask(umask)
+                os.chmod(tfile, (0o666 & ~umask))
+                os.rename(tfile, filename)
+            finally:
+                os.close(fd)
+
         if ud.shallow and ud.write_shallow_tarballs:
             if not os.path.exists(ud.fullshallow):
                 if os.path.islink(ud.fullshallow):
@@ -419,7 +447,8 @@ class Git(FetchMethod):
                     self.clone_shallow_local(ud, shallowclone, d)
 
                     logger.info("Creating tarball of git repository")
-                    runfetchcmd("tar -czf %s ." % ud.fullshallow, d, workdir=shallowclone)
+                    with create_atomic(ud.fullshallow) as tfile:
+                        runfetchcmd("tar -czf %s ." % tfile, d, workdir=shallowclone)
                     runfetchcmd("touch %s.done" % ud.fullshallow, d)
                 finally:
                     bb.utils.remove(tempdir, recurse=True)
@@ -428,7 +457,8 @@ class Git(FetchMethod):
                 os.unlink(ud.fullmirror)
 
             logger.info("Creating tarball of git repository")
-            runfetchcmd("tar -czf %s ." % ud.fullmirror, d, workdir=ud.clonedir)
+            with create_atomic(ud.fullmirror) as tfile:
+                runfetchcmd("tar -czf %s ." % tfile, d, workdir=ud.clonedir)
             runfetchcmd("touch %s.done" % ud.fullmirror, d)
 
     def clone_shallow_local(self, ud, dest, d):
@@ -633,6 +663,11 @@ class Git(FetchMethod):
         """
         Return the repository URL
         """
+        # Note that we do not support passwords directly in the git urls. There are several
+        # reasons. SRC_URI can be written out to things like buildhistory and people don't
+        # want to leak passwords like that. Its also all too easy to share metadata without 
+        # removing the password. ssh keys, ~/.netrc and ~/.ssh/config files can be used as
+        # alternatives so we will not take patches adding password support here.
         if ud.user:
             username = ud.user + '@'
         else:

@@ -18,34 +18,33 @@ SRC_URI = "${GNU_MIRROR}/grub/grub-${PV}.tar.gz \
            file://autogen.sh-exclude-pc.patch \
            file://grub-module-explicitly-keeps-symbole-.module_license.patch \
            file://0001-grub.d-10_linux.in-add-oe-s-kernel-name.patch \
-           file://CVE-2020-10713.patch \
-           file://calloc-Make-sure-we-always-have-an-overflow-checking.patch \
-           file://lvm-Add-LVM-cache-logical-volume-handling.patch \
-           file://CVE-2020-14308-calloc-Use-calloc-at-most-places.patch \
-           file://safemath-Add-some-arithmetic-primitives-that-check-f.patch \
-           file://CVE-2020-14309-CVE-2020-14310-CVE-2020-14311-malloc-Use-overflow-checking-primitives-where-we-do-.patch \
-           file://script-Remove-unused-fields-from-grub_script_functio.patch \
-           file://CVE-2020-15706-script-Avoid-a-use-after-free-when-redefining-a-func.patch \
-           file://CVE-2020-15707-linux-Fix-integer-overflows-in-initrd-size-handling.patch \
            file://determinism.patch \
+           file://0001-RISC-V-Restore-the-typcast-to-long.patch \
 "
-SRC_URI[md5sum] = "5ce674ca6b2612d8939b9e6abed32934"
-SRC_URI[sha256sum] = "f10c85ae3e204dbaec39ae22fa3c5e99f0665417e91c2cb49b7e5031658ba6ea"
+
+SRC_URI[sha256sum] = "23b64b4c741569f9426ed2e3d0e6780796fca081bee4c99f62aa3f53ae803f5f"
+
+# Applies only to RHEL
+CVE_CHECK_WHITELIST += "CVE-2019-14865"
 
 DEPENDS = "flex-native bison-native gettext-native"
 
-COMPATIBLE_HOST = '(x86_64.*|i.86.*|arm.*|aarch64.*)-(linux.*|freebsd.*)'
-COMPATIBLE_HOST_armv7a = 'null'
-COMPATIBLE_HOST_armv7ve = 'null'
+COMPATIBLE_HOST = '(x86_64.*|i.86.*|arm.*|aarch64.*|riscv.*)-(linux.*|freebsd.*)'
+COMPATIBLE_HOST:armv7a = 'null'
+COMPATIBLE_HOST:armv7ve = 'null'
 
 # configure.ac has code to set this automagically from the target tuple
 # but the OE freeform one (core2-foo-bar-linux) don't work with that.
 
-GRUBPLATFORM_arm = "efi"
-GRUBPLATFORM_aarch64 = "efi"
+GRUBPLATFORM:arm = "efi"
+GRUBPLATFORM:aarch64 = "efi"
+GRUBPLATFORM:riscv32 = "efi"
+GRUBPLATFORM:riscv64 = "efi"
 GRUBPLATFORM ??= "pc"
 
 inherit autotools gettext texinfo pkgconfig
+
+CFLAGS:remove = "-O2"
 
 EXTRA_OECONF = "--with-platform=${GRUBPLATFORM} \
                 --disable-grub-mkfont \
@@ -71,7 +70,7 @@ BUILD_LDFLAGS = ""
 
 export PYTHON = "python3"
 
-do_configure_prepend() {
+do_configure:prepend() {
 	cd ${S}
 	FROM_BOOTSTRAP=1 ${S}/autogen.sh
 	cd ${B}

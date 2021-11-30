@@ -128,7 +128,7 @@ skipped recipes will also be listed, with a " (skipped)" suffix.
                     sys.exit(1)
 
         pkg_pn = self.tinfoil.cooker.recipecaches[mc].pkg_pn
-        (latest_versions, preferred_versions) = self.tinfoil.find_providers(mc)
+        (latest_versions, preferred_versions, required_versions) = self.tinfoil.find_providers(mc)
         allproviders = self.tinfoil.get_all_providers(mc)
 
         # Ensure we list skipped recipes
@@ -154,7 +154,7 @@ skipped recipes will also be listed, with a " (skipped)" suffix.
         def print_item(f, pn, ver, layer, ispref):
             if not selected_layer or layer == selected_layer:
                 if not bare and f in skiplist:
-                    skipped = ' (skipped)'
+                    skipped = ' (skipped: %s)' % self.tinfoil.cooker.skiplist[f].skipreason
                 else:
                     skipped = ''
                 if show_filenames:
@@ -441,10 +441,10 @@ NOTE: .bbappend files can impact the dependencies.
                     line = fnfile.readline()
 
         # The "require/include xxx" in conf/machine/*.conf, .inc and .bbclass
-        conf_re = re.compile(".*/conf/machine/[^\/]*\.conf$")
-        inc_re = re.compile(".*\.inc$")
+        conf_re = re.compile(r".*/conf/machine/[^\/]*\.conf$")
+        inc_re = re.compile(r".*\.inc$")
         # The "inherit xxx" in .bbclass
-        bbclass_re = re.compile(".*\.bbclass$")
+        bbclass_re = re.compile(r".*\.bbclass$")
         for layerdir in self.bblayers:
             layername = self.get_layer_name(layerdir)
             for dirpath, dirnames, filenames in os.walk(layerdir):

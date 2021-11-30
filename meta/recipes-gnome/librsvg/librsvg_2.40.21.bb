@@ -25,6 +25,9 @@ SRC_URI += "file://gtk-option.patch \
 
 SRC_URI[archive.sha256sum] = "f7628905f1cada84e87e2b14883ed57d8094dca3281d5bcb24ece4279e9a92ba"
 
+# Issue only on windows
+CVE_CHECK_WHITELIST += "CVE-2018-1000041"
+
 CACHED_CONFIGUREVARS = "ac_cv_path_GDK_PIXBUF_QUERYLOADERS=${STAGING_LIBDIR_NATIVE}/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders"
 
 PACKAGECONFIG ??= "gdkpixbuf"
@@ -33,17 +36,17 @@ PACKAGECONFIG[gdkpixbuf] = "--enable-pixbuf-loader,--disable-pixbuf-loader,gdk-p
 # GTK+ test application (rsvg-view)
 PACKAGECONFIG[gtk] = "--with-gtk3,--without-gtk3,gtk+3"
 
-do_install_append() {
+do_install:append() {
 	# Loadable modules don't need .a or .la on Linux
 	rm -f ${D}${libdir}/gdk-pixbuf-2.0/*/loaders/*.a ${D}${libdir}/gdk-pixbuf-2.0/*/loaders/*.la
 }
 
 PACKAGES =+ "librsvg-gtk rsvg"
-FILES_rsvg = "${bindir}/rsvg* \
+FILES:rsvg = "${bindir}/rsvg* \
 	      ${datadir}/pixmaps/svg-viewer.svg \
 	      ${datadir}/themes"
-FILES_librsvg-gtk = "${libdir}/gdk-pixbuf-2.0/*/*/*.so \
+FILES:librsvg-gtk = "${libdir}/gdk-pixbuf-2.0/*/*/*.so \
                      ${datadir}/thumbnailers/librsvg.thumbnailer"
-RRECOMMENDS_librsvg-gtk = "gdk-pixbuf-bin"
+RRECOMMENDS:librsvg-gtk = "gdk-pixbuf-bin"
 
 PIXBUF_PACKAGES = "librsvg-gtk"

@@ -26,7 +26,6 @@ RDEPENDS = "${TOOLCHAIN_HOST_TASK}"
 
 EXCLUDE_FROM_WORLD = "1"
 
-inherit meta
 inherit populate_sdk
 inherit toolchain-scripts-base
 inherit nopackages
@@ -38,7 +37,7 @@ do_populate_sdk[stamp-extra-info] = "${PACKAGE_ARCH}"
 
 REAL_MULTIMACH_TARGET_SYS = "none"
 
-create_sdk_files_append () {
+create_sdk_files:append () {
 	rm -f ${SDK_OUTPUT}/${SDKPATH}/site-config-*
 	rm -f ${SDK_OUTPUT}/${SDKPATH}/environment-setup-*
 	rm -f ${SDK_OUTPUT}/${SDKPATH}/version-*

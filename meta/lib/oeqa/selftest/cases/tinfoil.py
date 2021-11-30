@@ -94,14 +94,13 @@ class TinfoilTests(OESelftestTestCase):
                 pass
 
             pattern = 'conf'
-            res = tinfoil.run_command('findFilesMatchingInDir', pattern, 'conf/machine')
+            res = tinfoil.run_command('testCookerCommandEvent', pattern)
             self.assertTrue(res)
 
             eventreceived = False
             commandcomplete = False
             start = time.time()
             # Wait for maximum 60s in total so we'd detect spurious heartbeat events for example
-            # The test is IO load sensitive too
             while (not (eventreceived == True and commandcomplete == True) 
                     and (time.time() - start < 60)):
                 # if we received both events (on let's say a good day), we are done  
@@ -111,7 +110,8 @@ class TinfoilTests(OESelftestTestCase):
                         commandcomplete = True
                     elif isinstance(event, bb.event.FilesMatchingFound):
                         self.assertEqual(pattern, event._pattern)
-                        self.assertIn('qemuarm.conf', event._matches)
+                        self.assertIn('A', event._matches)
+                        self.assertIn('B', event._matches)
                         eventreceived = True
                     elif isinstance(event, logging.LogRecord):
                         continue
@@ -173,8 +173,8 @@ class TinfoilTests(OESelftestTestCase):
             self.assertEqual(value, 'origvalue', 'Variable renamed using config_data.renameVar() does not appear with new name')
             # Test overrides
             tinfoil.config_data.setVar('TESTVAR', 'original')
-            tinfoil.config_data.setVar('TESTVAR_overrideone', 'one')
-            tinfoil.config_data.setVar('TESTVAR_overridetwo', 'two')
+            tinfoil.config_data.setVar('TESTVAR:overrideone', 'one')
+            tinfoil.config_data.setVar('TESTVAR:overridetwo', 'two')
             tinfoil.config_data.appendVar('OVERRIDES', ':overrideone')
             value = tinfoil.config_data.getVar('TESTVAR')
             self.assertEqual(value, 'one', 'Variable overrides not functioning correctly')

@@ -52,6 +52,10 @@ class TinfoilDataStoreConnectorVarHistory:
     def remoteCommand(self, cmd, *args, **kwargs):
         return self.tinfoil.run_command('dataStoreConnectorVarHistCmd', self.dsindex, cmd, args, kwargs)
 
+    def emit(self, var, oval, val, o, d):
+        ret = self.tinfoil.run_command('dataStoreConnectorVarHistCmdEmit', self.dsindex, var, oval, val, d.dsindex)
+        o.write(ret)
+
     def __getattr__(self, name):
         if not hasattr(bb.data_smart.VariableHistory, name):
             raise AttributeError("VariableHistory has no such method %s" % name)
@@ -440,7 +444,7 @@ class Tinfoil:
         to initialise Tinfoil and use it with config_only=True first and
         then conditionally call this function to parse recipes later.
         """
-        config_params = TinfoilConfigParameters(config_only=False)
+        config_params = TinfoilConfigParameters(config_only=False, quiet=self.quiet)
         self.run_actions(config_params)
         self.recipes_parsed = True
 
