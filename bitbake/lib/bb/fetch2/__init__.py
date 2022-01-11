@@ -430,6 +430,7 @@ def uri_replace(ud, uri_find, uri_replace, replacements, d, mirrortarball=None):
     uri_replace_decoded = list(decodeurl(uri_replace))
     logger.debug2("For url %s comparing %s to %s" % (uri_decoded, uri_find_decoded, uri_replace_decoded))
     result_decoded = ['', '', '', '', '', {}]
+    # 0 - type, 1 - host, 2 - path, 3 - user,  4- pswd, 5 - params
     for loc, i in enumerate(uri_find_decoded):
         result_decoded[loc] = uri_decoded[loc]
         regexp = i
@@ -449,6 +450,9 @@ def uri_replace(ud, uri_find, uri_replace, replacements, d, mirrortarball=None):
                 for l in replacements:
                     uri_replace_decoded[loc][k] = uri_replace_decoded[loc][k].replace(l, replacements[l])
                 result_decoded[loc][k] = uri_replace_decoded[loc][k]
+        elif (loc == 3 or loc == 4) and uri_replace_decoded[loc]:
+            # User/password in the replacement is just a straight replacement
+            result_decoded[loc] = uri_replace_decoded[loc]
         elif (re.match(regexp, uri_decoded[loc])):
             if not uri_replace_decoded[loc]:
                 result_decoded[loc] = ""
@@ -467,8 +471,12 @@ def uri_replace(ud, uri_find, uri_replace, replacements, d, mirrortarball=None):
                     uri_decoded[5] = {}
                 elif ud.localpath and ud.method.supports_checksum(ud):
                     basename = os.path.basename(ud.localpath)
-                if basename and not result_decoded[loc].endswith(basename):
-                    result_decoded[loc] = os.path.join(result_decoded[loc], basename)
+                if basename:
+                    uri_basename = os.path.basename(uri_decoded[loc])
+                    if uri_basename and basename != uri_basename and result_decoded[loc].endswith(uri_basename):
+                        result_decoded[loc] = result_decoded[loc].replace(uri_basename, basename)
+                    elif not result_decoded[loc].endswith(basename):
+                        result_decoded[loc] = os.path.join(result_decoded[loc], basename)
         else:
             return None
     result = encodeurl(result_decoded)
