@@ -328,8 +328,14 @@ class QemuRunner:
         try:
             os.chdir(os.path.dirname(qmp_port))
             try:
-               from qmp.legacy import QEMUMonitorProtocol
+               try:
+                   from qmp.legacy import QEMUMonitorProtocol
+               except ModuleNotFoundError:
+                   from qmp import QEMUMonitorProtocol
                self.qmp = QEMUMonitorProtocol(os.path.basename(qmp_port))
+            except ModuleNotFoundError as msg:
+                self.logger.warning("Failed to load QEMUMonitorProtocol from qmp.legacy or qmp: %s" % (msg))
+                return False
             except OSError as msg:
                 self.logger.warning("Failed to initialize qemu monitor socket: %s File: %s" % (msg, msg.filename))
                 return False
